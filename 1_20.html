@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>МАТЕМАТИКА (1–20 сандары) — Балаларға арналған оқу ойыны</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Nunito & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Nunito', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #e0f2fe 100%);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        /* 3D балаларға арналған батырма */
+        .btn-3d {
+            transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15) !important;
+        }
+
+        /* Көрнекі заттың пайда болу анимациясы */
+        @keyframes itemPopIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.25) translateY(14px) rotate(-8deg);
+            }
+            70% {
+                opacity: 1;
+                transform: scale(1.12) translateY(-2px) rotate(3deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0) rotate(0deg);
+            }
+        }
+        .animate-item-in {
+            animation: itemPopIn 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Азайтуда заттың алынып/өшіріліп көрсетілу анимациясы */
+        @keyframes itemRemoveAnim {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1) rotate(-5deg);
+                opacity: 0.85;
+            }
+            100% {
+                transform: scale(0.88) rotate(0deg);
+                opacity: 0.32;
+            }
+        }
+        .animate-item-removed {
+            animation: itemRemoveAnim 0.45s ease-out forwards;
+        }
+
+        /* Қате жауап дірілі */
+        @keyframes shakeWrong {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px) rotate(-1.5deg); }
+            40% { transform: translateX(8px) rotate(1.5deg); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shakeWrong 0.42s ease-in-out both;
+        }
+
+        /* Дұрыс жауап секіруі */
+        @keyframes celebratePop {
+            0% { transform: scale(1); }
+            35% { transform: scale(1.07); }
+            70% { transform: scale(0.97); }
+            100% { transform: scale(1.02); }
+        }
+        .animate-celebrate {
+            animation: celebratePop 0.45s ease-out forwards;
+        }
+
+        /* Конфетти */
+        .confetti-piece {
+            position: fixed;
+            width: 11px;
+            height: 11px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 9999;
+            animation: confettiFall 1.35s ease-out forwards;
+        }
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(230px) rotate(540deg) scale(0.45);
+                opacity: 0;
+            }
+        }
+
+        /* Жұмсақ қалқу */
+        @keyframes floatSoft {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-float {
+            animation: floatSoft 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- ================= ЖОҒАРҒЫ НАВИГАЦИЯ ПАНЕЛІ ================= -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b-2 border-amber-200 px-3 py-2.5 sm:px-6 shadow-sm">
+        <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+            <!-- Мәзірге қайту -->
+            <button id="btn-home" type="button" onclick="goHome()" class="btn-3d hidden items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-extrabold px-3 py-2 rounded-2xl border-b-4 border-amber-300 text-sm sm:text-base cursor-pointer">
+                <span class="text-lg">🏠</span>
+                <span>Мәзір</span>
+            </button>
+
+            <!-- Атауы -->
+            <div onclick="goHome()" class="flex items-center gap-2 cursor-pointer">
+                <span class="text-2xl sm:text-3xl animate-float">🧮</span>
+                <div class="leading-none">
+                    <h1 class="text-lg sm:text-2xl font-black tracking-tight bg-gradient-to-r from-amber-600 via-orange-500 to-sky-600 bg-clip-text text-transparent">
+                        МАТЕМАТИКА
+                    </h1>
+                    <span class="text-[10px] sm:text-xs font-extrabold text-slate-500">1–20 сандары</span>
+                </div>
+            </div>
+
+            <!-- Оң жақ панель: Дыбыс және Жұлдызшалар -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="btn-sound" type="button" onclick="toggleSound()" title="Дыбысты қосу немесе өшіру" class="btn-3d bg-sky-100 hover:bg-sky-200 text-sky-900 px-3 py-2 rounded-2xl border-b-4 border-sky-300 text-sm sm:text-base font-black leading-none flex items-center gap-1.5 cursor-pointer">
+                    <span id="sound-icon">🔊</span>
+                    <span id="sound-label" class="hidden sm:inline">Дыбыс қосулы</span>
+                </button>
+                <div class="flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-3.5 py-1.5 rounded-2xl shadow-sm border-b-4 border-amber-500">
+                    <span class="text-lg">⭐</span>
+                    <span id="total-stars" class="text-base sm:text-lg">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= НЕГІЗГІ АЙМАҚ ================= -->
+    <main class="flex-1 w-full max-w-5xl mx-auto px-3 py-4 sm:px-6 sm:py-6 flex flex-col">
+
+        <!-- 1. БАСТЫ ЭКРАН: АМАЛ ТАҢДАУ -->
+        <section id="screen-home" class="flex-1 flex flex-col justify-center items-center text-center my-auto py-2">
+            <div class="bg-white/95 rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-amber-200 w-full max-w-2xl">
+                <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-900 font-extrabold px-4 py-1.5 rounded-full text-xs sm:text-sm mb-3">
+                    <span>🎈</span>
+                    <span>1–20 сандары • Әр амалда 30 бірегей есеп</span>
+                </div>
+
+                <h2 class="text-2xl sm:text-4xl font-black text-slate-800 mb-2">
+                    Қосу мен азайтуды үйренейік!
+                </h2>
+                <p class="text-slate-600 font-bold text-sm sm:text-base mb-6 max-w-lg mx-auto">
+                    Әр есеп көрнекі заттармен көрсетіледі және қазақ тілінде дауыспен оқылады. Амалды таңда!
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <!-- ҚОСУ (30 тапсырма) -->
+                    <button type="button" onclick="startOperation('add')" class="btn-3d group bg-gradient-to-br from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-3xl p-5 sm:p-6 text-left shadow-lg border-b-8 border-emerald-700 flex flex-col justify-between min-h-[175px] cursor-pointer">
+                        <div class="flex items-start justify-between">
+                            <span class="bg-white/25 text-white font-black text-xs sm:text-sm px-3 py-1 rounded-full">
+                                30 тапсырма
+                            </span>
+                            <span class="text-4xl sm:text-5xl font-black group-hover:scale-110 transition-transform">➕</span>
+                        </div>
+                        <div class="mt-4">
+                            <h3 class="text-2xl sm:text-3xl font-black">Қосу</h3>
+                            <p class="text-emerald-50 text-xs sm:text-sm font-bold mt-1">
+                                Заттарды біріктіріп, қосындыны тап (1–20)
+                            </p>
+                            <div class="mt-3 bg-white/20 rounded-xl px-3 py-1.5 text-xs font-extrabold flex justify-between">
+                                <span>Орындалды:</span>
+                                <span id="home-add-progress">0 / 30</span>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- АЗАЙТУ (30 тапсырма) -->
+                    <button type="button" onclick="startOperation('sub')" class="btn-3d group bg-gradient-to-br from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-3xl p-5 sm:p-6 text-left shadow-lg border-b-8 border-indigo-800 flex flex-col justify-between min-h-[175px] cursor-pointer">
+                        <div class="flex items-start justify-between">
+                            <span class="bg-white/25 text-white font-black text-xs sm:text-sm px-3 py-1 rounded-full">
+                                30 тапсырма
+                            </span>
+                            <span class="text-4xl sm:text-5xl font-black group-hover:scale-110 transition-transform">➖</span>
+                        </div>
+                        <div class="mt-4">
+                            <h3 class="text-2xl sm:text-3xl font-black">Азайту</h3>
+                            <p class="text-sky-100 text-xs sm:text-sm font-bold mt-1">
+                                Заттарды азайтып, қалғанын тап (1–20)
+                            </p>
+                            <div class="mt-3 bg-white/20 rounded-xl px-3 py-1.5 text-xs font-extrabold flex justify-between">
+                                <span>Орындалды:</span>
+                                <span id="home-sub-progress">0 / 30</span>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. ОЙЫН ЭКРАНЫ -->
+        <section id="screen-game" class="hidden flex-1 flex flex-col gap-3 sm:gap-4">
+
+            <!-- Прогресс және тапсырма тізімі панелі -->
+            <div class="bg-white/95 rounded-2xl p-3 sm:px-4 shadow-sm border-2 border-amber-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <span id="op-badge" class="px-3 py-1 rounded-xl font-black text-xs sm:text-sm bg-emerald-100 text-emerald-800">
+                        ➕ Қосу
+                    </span>
+                    <span id="level-badge" class="px-2.5 py-1 rounded-xl font-extrabold text-xs bg-amber-100 text-amber-800">
+                        1-деңгей
+                    </span>
+                </div>
+
+                <!-- Ортасында прогресс жолағы -->
+                <div class="flex-1 min-w-[130px] max-w-xs mx-1">
+                    <div class="flex justify-between text-xs font-black text-slate-600 mb-1">
+                        <span>Тапсырма</span>
+                        <span id="task-counter-text">1 / 30</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                        <div id="task-progress-bar" class="h-full bg-gradient-to-r from-emerald-400 to-sky-500 rounded-full transition-all duration-300" style="width: 3.33%;"></div>
+                    </div>
+                </div>
+
+                <!-- Рандомды қайта араластыру және 30 тапсырма тізімі -->
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="reshuffleCurrentOperation()" title="30 есепті қайта рандомды араластыру" class="btn-3d bg-amber-100 hover:bg-amber-200 text-amber-900 font-extrabold px-3 py-1.5 rounded-xl border-b-4 border-amber-300 text-xs sm:text-sm flex items-center gap-1 cursor-pointer">
+                        <span>🎲</span>
+                        <span>Араластыр</span>
+                    </button>
+                    <button type="button" onclick="openTaskListModal()" class="btn-3d bg-sky-100 hover:bg-sky-200 text-sky-900 font-extrabold px-3 py-1.5 rounded-xl border-b-4 border-sky-300 text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer">
+                        <span>📋</span>
+                        <span>1–30 тізім</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ӨРНЕК ЖӘНЕ ДАУЫСТЫҚ БАСҚАРУ КАРТОЧКАСЫ -->
+            <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border-4 border-amber-200 flex flex-col items-center text-center gap-3">
+                <!-- Математикалық өрнек -->
+                <div id="equation-display" class="flex items-center justify-center flex-wrap gap-2 sm:gap-3 text-3xl sm:text-5xl font-black text-slate-800 tracking-wide">
+                    <!-- JS арқылы жаңартылады -->
+                </div>
+
+                <!-- Басқару батырмалары: Қайта оқу, Варианттарды оқу, Түсіндір, Қайта көрсет -->
+                <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                    <button type="button" onclick="readCurrentQuestion()" class="btn-3d bg-sky-500 hover:bg-sky-600 text-white font-black px-4 py-2.5 rounded-2xl border-b-4 border-sky-700 text-sm sm:text-base flex items-center gap-1.5 shadow cursor-pointer">
+                        <span>🔊</span>
+                        <span>Қайта оқу</span>
+                    </button>
+
+                    <button type="button" onclick="readChoicesAloud()" class="btn-3d bg-teal-500 hover:bg-teal-600 text-white font-black px-4 py-2.5 rounded-2xl border-b-4 border-teal-700 text-sm sm:text-base flex items-center gap-1.5 shadow cursor-pointer">
+                        <span>🔉</span>
+                        <span>Варианттарды оқу</span>
+                    </button>
+
+                    <button type="button" onclick="explainCurrentTask()" class="btn-3d bg-amber-400 hover:bg-amber-500 text-amber-950 font-black px-4 py-2.5 rounded-2xl border-b-4 border-amber-600 text-sm sm:text-base flex items-center gap-1.5 shadow cursor-pointer">
+                        <span>💡</span>
+                        <span>Түсіндір</span>
+                    </button>
+
+                    <button type="button" onclick="replayVisualAnimation()" class="btn-3d bg-purple-100 hover:bg-purple-200 text-purple-900 font-extrabold px-3.5 py-2.5 rounded-2xl border-b-4 border-purple-300 text-sm sm:text-base flex items-center gap-1.5 cursor-pointer">
+                        <span>🔄</span>
+                        <span>Қайта көрсет</span>
+                    </button>
+                </div>
+
+                <!-- Кері байланыс / Түсіндірме мәтіні -->
+                <div id="feedback-banner" class="w-full min-h-[42px] bg-amber-50/90 border-2 border-amber-200/80 rounded-2xl px-4 py-2 flex items-center justify-center text-sm sm:text-base font-extrabold text-slate-700">
+                    Есепті тыңда және дұрыс жауапты таңда! 👇
+                </div>
+            </div>
+
+            <!-- КӨРНЕКІ ЗАТТАР АЛАҢЫ -->
+            <div class="bg-white/95 rounded-3xl p-3.5 sm:p-5 shadow-md border-4 border-sky-200 flex-1 flex flex-col justify-between min-h-[210px] sm:min-h-[250px]">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <span id="visual-caption" class="text-xs sm:text-sm font-black text-sky-800 bg-sky-100 px-3 py-1 rounded-full">
+                        Көрнекі заттар
+                    </span>
+                    <span id="visual-summary-pill" class="text-xs sm:text-sm font-black text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full hidden">
+                        <!-- Жауап ашылғанда немесе түсіндіргенде көрсетіледі -->
+                    </span>
+                </div>
+
+                <!-- Заттар орналасатын тор/аймақ -->
+                <div id="visual-stage" class="flex-1 flex flex-col items-center justify-center gap-3 py-1">
+                    <!-- JS арқылы топталған көрнекі заттар салынады -->
+                </div>
+            </div>
+
+            <!-- 3 ҮЛКЕН ЖАУАП НҰСҚАСЫ (БӨЛЕК САН БАТЫРМАСЫ ЖӘНЕ БӨЛЕК ДЫБЫС БАТЫРМАСЫ) -->
+            <div id="choices-container" class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <!-- JS арқылы 3 үлкен вариант карточкасы жасалады -->
+            </div>
+
+            <!-- ТӨМЕНГІ НАВИГАЦИЯ: Алдыңғы / Келесі тапсырма -->
+            <div class="flex items-center justify-between gap-3 pt-1">
+                <button id="btn-prev-task" type="button" onclick="prevTask()" class="btn-3d bg-white hover:bg-slate-100 text-slate-700 font-black px-4 py-2.5 rounded-2xl border-b-4 border-slate-300 text-sm sm:text-base flex items-center gap-1.5 shadow-sm disabled:opacity-40 cursor-pointer">
+                    <span>⬅️</span>
+                    <span>Алдыңғы</span>
+                </button>
+
+                <button id="btn-next-task" type="button" onclick="nextTask()" class="btn-3d bg-emerald-500 hover:bg-emerald-600 text-white font-black px-5 py-2.5 rounded-2xl border-b-4 border-emerald-700 text-sm sm:text-base flex items-center gap-1.5 shadow cursor-pointer">
+                    <span>Келесі есеп</span>
+                    <span>➡️</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- ================= 1–30 ТАПСЫРМАЛАР ТІЗІМІ МОДАЛДЫ ТЕРЕЗЕСІ ================= -->
+    <div id="task-list-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-3 sm:p-5">
+        <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border-4 border-amber-300 overflow-hidden">
+            <div class="px-5 py-4 bg-amber-50 border-b-2 border-amber-200 flex items-center justify-between">
+                <div>
+                    <h3 id="modal-title" class="text-lg sm:text-xl font-black text-slate-800">1–30 тапсырмалар</h3>
+                    <p class="text-xs font-bold text-slate-500">Кез келген есепке өту үшін нөмірін бас</p>
+                </div>
+                <button type="button" onclick="closeTaskListModal()" class="btn-3d bg-rose-100 hover:bg-rose-200 text-rose-700 font-black w-10 h-10 rounded-2xl border-b-4 border-rose-300 flex items-center justify-center text-lg cursor-pointer">
+                    ✕
+                </button>
+            </div>
+
+            <div class="p-4 overflow-y-auto grid grid-cols-5 sm:grid-cols-6 gap-2" id="modal-tasks-grid">
+                <!-- 1-30 батырмалары JS арқылы толтырылады -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // 1. 1–20 САНДАРЫН ҚАЗАҚША СӨЗБЕН ОҚУ СӨЗДІГІ (0 САН МҮЛДЕМ ЖОҚ)
+        // ============================================================================
+        const KK_NUMBERS = {
+            1: "бір",
+            2: "екі",
+            3: "үш",
+            4: "төрт",
+            5: "бес",
+            6: "алты",
+            7: "жеті",
+            8: "сегіз",
+            9: "тоғыз",
+            10: "он",
+            11: "он бір",
+            12: "он екі",
+            13: "он үш",
+            14: "он төрт",
+            15: "он бес",
+            16: "он алты",
+            17: "он жеті",
+            18: "он сегіз",
+            19: "он тоғыз",
+            20: "жиырма"
+        };
+
+        function numberToKk(n) {
+            return KK_NUMBERS[n] || String(n);
+        }
+
+        function capitalizeKk(str) {
+            if (!str) return "";
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        // ============================================================================
+        // 2. СЕНІМДІ ДЫБЫС ЖҮЙЕСІ (SPEECHSYNTHESIS + ТАЙМЕР САҚТАНДЫРУЫ + WEB AUDIO)
+        // ============================================================================
+        let audioCtx = null;
+        let speechSafetyTimer = null;
+
+        function getAudioContext() {
+            try {
+                if (!audioCtx) {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (Ctx) {
+                        audioCtx = new Ctx();
+                    }
+                }
+                if (audioCtx && audioCtx.state === "suspended") {
+                    audioCtx.resume().catch(() => {});
+                }
+            } catch (e) {}
+            return audioCtx;
+        }
+
+        function playTone(type) {
+            if (!state.soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === "correct") {
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.09);
+                    osc.frequency.setValueAtTime(783.99, now + 0.18);
+                    gain.gain.setValueAtTime(0.14, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === "wrong") {
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(260, now);
+                    osc.frequency.linearRampToValueAtTime(185, now + 0.24);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+                    osc.start(now);
+                    osc.stop(now + 0.28);
+                } else {
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(587.33, now);
+                    gain.gain.setValueAtTime(0.06, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                }
+            } catch (e) {}
+        }
+
+        function pickKazakhOrCyrillicVoice() {
+            if (!("speechSynthesis" in window)) return null;
+            try {
+                const voices = window.speechSynthesis.getVoices() || [];
+                if (!voices.length) return null;
+
+                // 1) Қазақша дауыс
+                let v = voices.find(voice => (voice.lang || "").toLowerCase().startsWith("kk"));
+                if (v) return v;
+
+                // 2) Түркі / ортаазиялық немесе кириллица қолдайтын дауыс
+                v = voices.find(voice => {
+                    const lang = (voice.lang || "").toLowerCase();
+                    return lang.startsWith("ru") || lang.startsWith("tr") || lang.startsWith("ky") || lang.startsWith("uz");
+                });
+                return v || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function clearSpeechTimers() {
+            if (speechSafetyTimer) {
+                clearTimeout(speechSafetyTimer);
+                speechSafetyTimer = null;
+            }
+        }
+
+        function cancelSpeechSafe() {
+            clearSpeechTimers();
+            try {
+                if ("speechSynthesis" in window) {
+                    window.speechSynthesis.cancel();
+                }
+            } catch (e) {}
+        }
+
+        /**
+         * Мәтінді қазақша оқу. Егер speechSynthesis қолжетімсіз болса немесе ілініп қалса,
+         * қауіпсіз таймер арқылы onDone шақырылады.
+         */
+        function speakKazakh(text, options = {}) {
+            const { rate = 0.92, fallbackTone = "click", onDone = null } = options;
+
+            if (!state.soundEnabled) {
+                if (typeof onDone === "function") onDone();
+                return;
+            }
+
+            cancelSpeechSafe();
+
+            const hasSpeech = "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+            if (!hasSpeech) {
+                playTone(fallbackTone);
+                if (typeof onDone === "function") {
+                    speechSafetyTimer = setTimeout(onDone, 4500);
+                }
+                return;
+            }
+
+            let finished = false;
+            const finishOnce = () => {
+                if (finished) return;
+                finished = true;
+                clearSpeechTimers();
+                if (typeof onDone === "function") onDone();
+            };
+
+            try {
+                const utter = new SpeechSynthesisUtterance(text);
+                const voice = pickKazakhOrCyrillicVoice();
+                if (voice) {
+                    utter.voice = voice;
+                    utter.lang = voice.lang || "kk-KZ";
+                } else {
+                    utter.lang = "kk-KZ";
+                }
+                utter.rate = rate;
+                utter.pitch = 1.05;
+                utter.volume = 1.0;
+
+                utter.onend = () => finishOnce();
+                utter.onerror = () => {
+                    playTone(fallbackTone);
+                    finishOnce();
+                };
+
+                // Егер браузер onend шақырмай қалса, мәтін ұзындығына қарай сақтандыру таймері
+                const estimatedMs = Math.max(900, Math.min(4500, text.length * 85));
+                speechSafetyTimer = setTimeout(finishOnce, estimatedMs);
+
+                window.speechSynthesis.speak(utter);
+            } catch (e) {
+                playTone(fallbackTone);
+                finishOnce();
+            }
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            const iconEl = document.getElementById("sound-icon");
+            const labelEl = document.getElementById("sound-label");
+
+            if (state.soundEnabled) {
+                iconEl.textContent = "🔊";
+                if (labelEl) labelEl.textContent = "Дыбыс қосулы";
+                getAudioContext();
+                speakKazakh("Дыбыс қосулы", { fallbackTone: "click" });
+            } else {
+                cancelSpeechSafe();
+                iconEl.textContent = "🔇";
+                if (labelEl) labelEl.textContent = "Дыбыс өшірулі";
+            }
+        }
+
+        // ============================================================================
+        // 3. КӨРНЕКІ ЗАТТАР (БАЛАЛАРҒА АРНАЛҒАН ЭМОДЗИЛЕР)
+        // ============================================================================
+        const VISUAL_ITEMS = [
+            { emoji: "🍎", name: "алма" },
+            { emoji: "🍓", name: "құлпынай" },
+            { emoji: "🍌", name: "банан" },
+            { emoji: "🍊", name: "мандарин" },
+            { emoji: "🎈", name: "шар" },
+            { emoji: "⭐", name: "жұлдызша" },
+            { emoji: "🌸", name: "гүл" },
+            { emoji: "🍪", name: "печенье" },
+            { emoji: "🍬", name: "кәмпит" },
+            { emoji: "🚗", name: "мәшине" },
+            { emoji: "🐟", name: "балық" },
+            { emoji: "🦋", name: "көбелек" }
+        ];
+
+        // ============================================================================
+        // 4. 30 ҚОСУ ЖӘНЕ 30 АЗАЙТУ БІРЕГЕЙ ЕСЕБІ (1–20 САНДАРЫ, 0 МҮЛДЕМ ЖОҚ)
+        // ============================================================================
+        const TASK_COUNT = 30;
+
+        function shuffleArray(arr) {
+            const copy = arr.slice();
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        /**
+         * 1–20 аралығындағы (0 саны мүлдем жоқ) 3 үлкен жауап нұсқасын құрастыру.
+         */
+        function generateThreeChoices(answer, minVal = 1, maxVal = 20) {
+            const pool = [];
+            for (let v = minVal; v <= maxVal; v++) {
+                if (v !== answer) {
+                    pool.push(v);
+                }
+            }
+
+            // Жауапқа жақын және әртүрлі сандарды араластырып аламыз
+            const nearCandidates = pool.filter(v => Math.abs(v - answer) <= 3);
+            const chosen = new Set([answer]);
+
+            for (const cand of shuffleArray(nearCandidates)) {
+                if (chosen.size >= 3) break;
+                chosen.add(cand);
+            }
+            for (const cand of shuffleArray(pool)) {
+                if (chosen.size >= 3) break;
+                chosen.add(cand);
+            }
+
+            return shuffleArray(Array.from(chosen));
+        }
+
+        /**
+         * Қосуға 30 бірегей есеп:
+         * 1 <= a, 1 <= b, a + b <= 20 (жауап 2..20, 0 саны жоқ).
+         */
+        function buildThirtyAdditionTasks() {
+            const pairs = [
+                // 1–10 деңгейі (1-10 тапсырма)
+                [1, 1], [2, 1], [1, 3], [2, 2], [3, 2],
+                [4, 1], [3, 3], [5, 2], [4, 3], [5, 3],
+                // 7–15 деңгейі (11-20 тапсырма)
+                [6, 2], [4, 5], [7, 2], [5, 5], [6, 4],
+                [8, 3], [7, 4], [9, 3], [6, 6], [8, 5],
+                // 12–20 деңгейі (21-30 тапсырма)
+                [9, 4], [7, 7], [10, 5], [8, 7], [11, 4],
+                [9, 6], [12, 5], [10, 8], [13, 6], [11, 9]
+            ];
+
+            const seen = new Set();
+            const uniquePairs = [];
+            for (const [a, b] of pairs) {
+                const key = `${a}+${b}`;
+                if (!seen.has(key) && a >= 1 && b >= 1 && a + b <= 20) {
+                    seen.add(key);
+                    uniquePairs.push([a, b]);
+                }
+            }
+
+            // Рандомды ретпен 30 есеп қалыптастыру
+            const shuffledPairs = shuffleArray(uniquePairs).slice(0, TASK_COUNT);
+
+            return shuffledPairs.map(([a, b], idx) => {
+                const ans = a + b;
+                const item = VISUAL_ITEMS[idx % VISUAL_ITEMS.length];
+                return {
+                    num: idx + 1,
+                    op: "add",
+                    a,
+                    b,
+                    answer: ans,
+                    item,
+                    choices: generateThreeChoices(ans, 1, 20)
+                };
+            });
+        }
+
+        /**
+         * Азайтуға 30 бірегей есеп:
+         * 2 <= a <= 20, 1 <= b < a, a - b >= 1 (жауап 1..19, 0 саны жоқ).
+         */
+        function buildThirtySubtractionTasks() {
+            const pairs = [
+                // Кіші сандардан азайту (1-10 тапсырма)
+                [3, 1], [4, 2], [5, 1], [5, 2], [6, 2],
+                [6, 3], [7, 2], [7, 4], [8, 3], [9, 4],
+                // Орташа сандардан азайту (11-20 тапсырма)
+                [10, 3], [11, 2], [12, 4], [13, 5], [14, 3],
+                [15, 6], [14, 7], [16, 5], [17, 8], [18, 6],
+                // 20-ға дейінгі сандардан азайту (21-30 тапсырма)
+                [19, 7], [20, 5], [18, 9], [20, 8], [17, 6],
+                [19, 10], [20, 11], [16, 7], [20, 14], [19, 12]
+            ];
+
+            const seen = new Set();
+            const uniquePairs = [];
+            for (const [a, b] of pairs) {
+                const key = `${a}-${b}`;
+                if (!seen.has(key) && a >= 2 && a <= 20 && b >= 1 && a - b >= 1) {
+                    seen.add(key);
+                    uniquePairs.push([a, b]);
+                }
+            }
+
+            // Рандомды ретпен 30 есеп қалыптастыру
+            const shuffledPairs = shuffleArray(uniquePairs).slice(0, TASK_COUNT);
+
+            return shuffledPairs.map(([a, b], idx) => {
+                const ans = a - b;
+                const item = VISUAL_ITEMS[(idx + 4) % VISUAL_ITEMS.length];
+                return {
+                    num: idx + 1,
+                    op: "sub",
+                    a,
+                    b,
+                    answer: ans,
+                    item,
+                    choices: generateThreeChoices(ans, 1, 20)
+                };
+            });
+        }
+
+        // ============================================================================
+        // 5. ОЙЫН КҮЙІ ЖӘНЕ НАВИГАЦИЯ
+        // ============================================================================
+        const state = {
+            soundEnabled: true,
+            stars: 0,
+            operation: null,
+            tasks: {
+                add: buildThirtyAdditionTasks(),
+                sub: buildThirtySubtractionTasks()
+            },
+            currentIndex: {
+                add: 0,
+                sub: 0
+            },
+            solved: {
+                add: new Set(),
+                sub: new Set()
+            },
+            answeredCurrent: false
+        };
+
+        let animationTimers = [];
+
+        function clearAnimationTimers() {
+            animationTimers.forEach(t => clearTimeout(t));
+            animationTimers = [];
+        }
+
+        function getCurrentTask() {
+            const op = state.operation;
+            if (!op) return null;
+            return state.tasks[op][state.currentIndex[op]];
+        }
+
+        function updateHomeStats() {
+            document.getElementById("home-add-progress").textContent = `${state.solved.add.size} / ${TASK_COUNT}`;
+            document.getElementById("home-sub-progress").textContent = `${state.solved.sub.size} / ${TASK_COUNT}`;
+            document.getElementById("total-stars").textContent = String(state.stars);
+        }
+
+        function goHome() {
+            clearAnimationTimers();
+            cancelSpeechSafe();
+            closeTaskListModal();
+            state.operation = null;
+            updateHomeStats();
+
+            document.getElementById("btn-home").classList.add("hidden");
+            document.getElementById("btn-home").classList.remove("flex");
+            document.getElementById("screen-game").classList.add("hidden");
+            document.getElementById("screen-home").classList.remove("hidden");
+        }
+
+        function startOperation(op) {
+            clearAnimationTimers();
+            cancelSpeechSafe();
+            getAudioContext();
+
+            state.operation = op;
+            // Әр амалды ашқанда 30 есеп рандомды ретпен жаңартылады
+            state.tasks[op] = op === "add" ? buildThirtyAdditionTasks() : buildThirtySubtractionTasks();
+            state.currentIndex[op] = 0;
+
+            document.getElementById("screen-home").classList.add("hidden");
+            document.getElementById("screen-game").classList.remove("hidden");
+            document.getElementById("btn-home").classList.remove("hidden");
+            document.getElementById("btn-home").classList.add("flex");
+
+            const badge = document.getElementById("op-badge");
+            if (op === "add") {
+                badge.textContent = "➕ Қосу";
+                badge.className = "px-3 py-1 rounded-xl font-black text-xs sm:text-sm bg-emerald-100 text-emerald-800";
+            } else {
+                badge.textContent = "➖ Азайту";
+                badge.className = "px-3 py-1 rounded-xl font-black text-xs sm:text-sm bg-sky-100 text-sky-800";
+            }
+
+            loadTask(0, true);
+        }
+
+        function reshuffleCurrentOperation() {
+            const op = state.operation;
+            if (!op) return;
+            clearAnimationTimers();
+            cancelSpeechSafe();
+
+            state.tasks[op] = op === "add" ? buildThirtyAdditionTasks() : buildThirtySubtractionTasks();
+            state.currentIndex[op] = 0;
+            loadTask(0, true);
+            speakKazakh("Тапсырмалар қайта араластырылды", { fallbackTone: "click" });
+        }
+
+        function loadTask(index, autoSpeak = true) {
+            const op = state.operation;
+            if (!op) return;
+
+            clearAnimationTimers();
+            cancelSpeechSafe();
+
+            state.currentIndex[op] = Math.max(0, Math.min(TASK_COUNT - 1, index));
+            state.answeredCurrent = false;
+
+            const task = getCurrentTask();
+            const taskNum = state.currentIndex[op] + 1;
+
+            document.getElementById("task-counter-text").textContent = `${taskNum} / ${TASK_COUNT}`;
+            document.getElementById("task-progress-bar").style.width = `${(taskNum / TASK_COUNT) * 100}%`;
+
+            const levelBadge = document.getElementById("level-badge");
+            if (task.answer <= 7) {
+                levelBadge.textContent = "1-деңгей (жеңіл)";
+            } else if (task.answer <= 13) {
+                levelBadge.textContent = "2-деңгей (орташа)";
+            } else {
+                levelBadge.textContent = "3-деңгей (күрделі)";
+            }
+
+            document.getElementById("btn-prev-task").disabled = state.currentIndex[op] === 0;
+            const nextBtn = document.getElementById("btn-next-task");
+            nextBtn.innerHTML = state.currentIndex[op] === TASK_COUNT - 1
+                ? "<span>Аяқтау</span><span>🏁</span>"
+                : "<span>Келесі есеп</span><span>➡️</span>";
+
+            const banner = document.getElementById("feedback-banner");
+            banner.className = "w-full min-h-[42px] bg-amber-50/90 border-2 border-amber-200/80 rounded-2xl px-4 py-2 flex items-center justify-center text-sm sm:text-base font-extrabold text-slate-700";
+            banner.textContent = "Есепті тыңда және дұрыс жауапты таңда! 👇";
+
+            const summaryPill = document.getElementById("visual-summary-pill");
+            summaryPill.classList.add("hidden");
+            summaryPill.textContent = "";
+
+            renderEquation(task, false);
+            renderChoices(task);
+            playVisualExplanation(task, false);
+
+            if (autoSpeak) {
+                const t = setTimeout(() => {
+                    readCurrentQuestion();
+                }, 260);
+                animationTimers.push(t);
+            }
+        }
+
+        // ============================================================================
+        // 6. ӨРНЕКТІ КӨРСЕТУ, КӨРНЕКІ ЗАТТАР АНИМАЦИЯСЫ ЖӘНЕ ҚАЗАҚША ОҚУ
+        // ============================================================================
+        function renderEquation(task, showAnswer = false) {
+            const eqEl = document.getElementById("equation-display");
+            const signSymbol = task.op === "add" ? "+" : "−";
+            const signColor = task.op === "add" ? "text-emerald-600" : "text-sky-600";
+            const ansText = showAnswer ? String(task.answer) : "?";
+            const ansStyle = showAnswer
+                ? "bg-emerald-100 text-emerald-700 border-emerald-400"
+                : "bg-amber-100 text-amber-700 border-amber-300";
+
+            eqEl.innerHTML = `
+                <span class="px-3 py-1 rounded-2xl bg-slate-100 border-2 border-slate-200">${task.a}</span>
+                <span class="${signColor} font-black text-3xl sm:text-5xl">${signSymbol}</span>
+                <span class="px-3 py-1 rounded-2xl bg-slate-100 border-2 border-slate-200">${task.b}</span>
+                <span class="text-slate-400 font-black">=</span>
+                <span class="min-w-[64px] sm:min-w-[82px] px-3 py-1 rounded-2xl border-2 ${ansStyle}">${ansText}</span>
+            `;
+        }
+
+        function buildTaskSpokenSentence(task) {
+            const aWord = numberToKk(task.a);
+            const bWord = numberToKk(task.b);
+            if (task.op === "add") {
+                return `${capitalizeKk(aWord)} қосу ${bWord} қанша болады?`;
+            }
+            return `${capitalizeKk(aWord)} азайту ${bWord} қанша болады?`;
+        }
+
+        function readCurrentQuestion() {
+            const task = getCurrentTask();
+            if (!task) return;
+            getAudioContext();
+            speakKazakh(buildTaskSpokenSentence(task), { rate: 0.9, fallbackTone: "click" });
+        }
+
+        function readChoicesAloud() {
+            const task = getCurrentTask();
+            if (!task || !task.choices || !task.choices.length) return;
+            getAudioContext();
+            const spokenOptions = task.choices.map(n => numberToKk(n)).join(", ");
+            speakKazakh(`Нұсқалар: ${spokenOptions}`, { rate: 0.88, fallbackTone: "click" });
+        }
+
+        function replayVisualAnimation() {
+            const task = getCurrentTask();
+            if (!task) return;
+            clearAnimationTimers();
+            cancelSpeechSafe();
+            playVisualExplanation(task, false);
+            readCurrentQuestion();
+        }
+
+        function explainCurrentTask() {
+            const task = getCurrentTask();
+            if (!task) return;
+            getAudioContext();
+            clearAnimationTimers();
+            cancelSpeechSafe();
+
+            const aWord = numberToKk(task.a);
+            const bWord = numberToKk(task.b);
+            const ansWord = numberToKk(task.answer);
+
+            const banner = document.getElementById("feedback-banner");
+            banner.className = "w-full min-h-[42px] bg-sky-50 border-2 border-sky-300 rounded-2xl px-4 py-2 flex items-center justify-center text-sm sm:text-base font-extrabold text-sky-900";
+
+            if (task.op === "add") {
+                banner.textContent = `💡 Алдымен ${task.a} ${task.item.name}, сосын тағы ${task.b} ${task.item.name} қосамыз. Барлығы ${task.answer} болады!`;
+                playVisualExplanation(task, true);
+                speakKazakh(`Алдымен ${aWord} ${task.item.name}, кейін тағы ${bWord} ${task.item.name} қосамыз. Барлығы ${ansWord} болады.`, {
+                    rate: 0.88,
+                    fallbackTone: "click"
+                });
+            } else {
+                banner.textContent = `💡 Алдымен ${task.a} ${task.item.name} бар, соның ${task.b} ${task.item.name} алып тастаймыз. Қалғаны ${task.answer}!`;
+                playVisualExplanation(task, true);
+                speakKazakh(`Алдымен ${aWord} ${task.item.name} бар, одан ${bWord} ${task.item.name} аламыз. Сонда ${ansWord} қалады.`, {
+                    rate: 0.88,
+                    fallbackTone: "click"
+                });
+            }
+        }
+
+        function createTokenElement(emoji, extraClasses = "") {
+            const span = document.createElement("span");
+            span.className = `inline-flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-2xl text-2xl sm:text-3xl shadow-xs select-none ${extraClasses}`;
+            span.textContent = emoji;
+            return span;
+        }
+
+        /**
+         * Көрнекі заттар арқылы есепті сатылап көрсету.
+         */
+        function playVisualExplanation(task, revealAnswer = false) {
+            const stage = document.getElementById("visual-stage");
+            const caption = document.getElementById("visual-caption");
+            const summaryPill = document.getElementById("visual-summary-pill");
+
+            stage.innerHTML = "";
+            if (!revealAnswer) {
+                summaryPill.classList.add("hidden");
+            }
+
+            if (task.op === "add") {
+                caption.textContent = `${task.a} ${task.item.name} + ${task.b} ${task.item.name}`;
+
+                const row = document.createElement("div");
+                row.className = "w-full flex flex-wrap items-center justify-center gap-3 sm:gap-4";
+
+                const groupA = document.createElement("div");
+                groupA.className = "flex flex-wrap items-center justify-center gap-1.5 bg-amber-50 border-2 border-amber-200 rounded-2xl p-2.5 max-w-[340px]";
+
+                const plusBadge = document.createElement("div");
+                plusBadge.className = "text-2xl sm:text-3xl font-black text-emerald-600 px-1 opacity-0 transition-opacity duration-300";
+                plusBadge.textContent = "+";
+
+                const groupB = document.createElement("div");
+                groupB.className = "flex flex-wrap items-center justify-center gap-1.5 bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-2.5 max-w-[340px]";
+
+                row.appendChild(groupA);
+                row.appendChild(plusBadge);
+                row.appendChild(groupB);
+                stage.appendChild(row);
+
+                const stepDelay = task.a + task.b > 14 ? 55 : 85;
+
+                for (let i = 0; i < task.a; i++) {
+                    const t = setTimeout(() => {
+                        const tok = createTokenElement(task.item.emoji, "bg-white animate-item-in");
+                        groupA.appendChild(tok);
+                    }, i * stepDelay);
+                    animationTimers.push(t);
+                }
+
+                const afterFirstMs = task.a * stepDelay + 260;
+                const tPlus = setTimeout(() => {
+                    plusBadge.classList.remove("opacity-0");
+                    plusBadge.classList.add("animate-item-in");
+                }, afterFirstMs);
+                animationTimers.push(tPlus);
+
+                for (let j = 0; j < task.b; j++) {
+                    const t = setTimeout(() => {
+                        const tok = createTokenElement(task.item.emoji, "bg-white animate-item-in");
+                        groupB.appendChild(tok);
+                    }, afterFirstMs + 180 + j * stepDelay);
+                    animationTimers.push(t);
+                }
+
+                if (revealAnswer) {
+                    const tSum = setTimeout(() => {
+                        summaryPill.textContent = `Барлығы: ${task.answer} ${task.item.name}`;
+                        summaryPill.classList.remove("hidden");
+                    }, afterFirstMs + 220 + task.b * stepDelay);
+                    animationTimers.push(tSum);
+                }
+            } else {
+                caption.textContent = `Барлығы ${task.a} ${task.item.name}, ${task.b}-еуін аламыз`;
+
+                const groupAll = document.createElement("div");
+                groupAll.className = "flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 bg-sky-50/90 border-2 border-sky-200 rounded-2xl p-3 max-w-[540px]";
+                stage.appendChild(groupAll);
+
+                const tokenEls = [];
+                const stepDelay = task.a > 14 ? 55 : 80;
+
+                for (let i = 0; i < task.a; i++) {
+                    const t = setTimeout(() => {
+                        const tok = createTokenElement(task.item.emoji, "bg-white animate-item-in relative");
+                        groupAll.appendChild(tok);
+                        tokenEls.push(tok);
+                    }, i * stepDelay);
+                    animationTimers.push(t);
+                }
+
+                const removeStartMs = task.a * stepDelay + 420;
+                const removeFromIdx = task.a - task.b;
+                for (let k = removeFromIdx; k < task.a; k++) {
+                    const offsetIdx = k - removeFromIdx;
+                    const tRem = setTimeout(() => {
+                        const el = tokenEls[k];
+                        if (el) {
+                            el.classList.remove("bg-white");
+                            el.classList.add("bg-rose-100", "ring-2", "ring-rose-400", "animate-item-removed");
+                        }
+                    }, removeStartMs + offsetIdx * 130);
+                    animationTimers.push(tRem);
+                }
+
+                if (revealAnswer) {
+                    const tRemEnd = setTimeout(() => {
+                        summaryPill.textContent = `Қалғаны: ${task.answer} ${task.item.name}`;
+                        summaryPill.classList.remove("hidden");
+                    }, removeStartMs + task.b * 130 + 180);
+                    animationTimers.push(tRemEnd);
+                }
+            }
+        }
+
+        // ============================================================================
+        // 7. 3 ҮЛКЕН ЖАУАП НҰСҚАСЫ (БӨЛЕК САН БАТЫРМАСЫ + БӨЛЕК ДЫБЫС БАТЫРМАСЫ)
+        // ============================================================================
+        function speakSingleChoice(choiceVal, voiceBtnEl, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            getAudioContext();
+            const word = capitalizeKk(numberToKk(choiceVal));
+
+            if (voiceBtnEl) {
+                voiceBtnEl.classList.remove("animate-celebrate");
+                void voiceBtnEl.offsetWidth;
+                voiceBtnEl.classList.add("animate-celebrate");
+                setTimeout(() => voiceBtnEl.classList.remove("animate-celebrate"), 460);
+            }
+
+            speakKazakh(word, { rate: 0.9, fallbackTone: "click" });
+        }
+
+        function renderChoices(task) {
+            const container = document.getElementById("choices-container");
+            container.innerHTML = "";
+
+            const palettes = [
+                {
+                    card: "bg-amber-50 border-amber-300",
+                    selectBtn: "bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-amber-950 border-orange-700",
+                    voiceBtn: "bg-white hover:bg-amber-100 text-orange-700 border-amber-400"
+                },
+                {
+                    card: "bg-sky-50 border-sky-300",
+                    selectBtn: "bg-gradient-to-br from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white border-blue-700",
+                    voiceBtn: "bg-white hover:bg-sky-100 text-blue-700 border-sky-400"
+                },
+                {
+                    card: "bg-purple-50 border-purple-300",
+                    selectBtn: "bg-gradient-to-br from-purple-400 to-indigo-500 hover:from-purple-500 hover:to-indigo-600 text-white border-indigo-700",
+                    voiceBtn: "bg-white hover:bg-purple-100 text-indigo-700 border-purple-400"
+                }
+            ];
+
+            task.choices.forEach((choiceVal, idx) => {
+                const pal = palettes[idx % palettes.length];
+                const wordLabel = capitalizeKk(numberToKk(choiceVal));
+
+                // Вариант контейнері: екі батырма бір-бірінің ішіне кірмей, қатар орналасады
+                const optionCard = document.createElement("div");
+                optionCard.dataset.choiceValue = String(choiceVal);
+                optionCard.className = `option-card ${pal.card} rounded-3xl border-2 p-2.5 sm:p-3 shadow-md flex items-center gap-2.5 min-h-[92px] sm:min-h-[112px]`;
+
+                // 1) Негізгі үлкен сан батырмасы (тек жауапты таңдайды және тексереді)
+                const selectBtn = document.createElement("button");
+                selectBtn.type = "button";
+                selectBtn.setAttribute("aria-label", `${choiceVal} жауабын таңдау`);
+                selectBtn.className = `option-select-btn btn-3d ${pal.selectBtn} flex-1 h-full min-h-[74px] sm:min-h-[88px] rounded-2xl border-b-6 px-3 py-2 font-black flex flex-col items-center justify-center gap-0.5 cursor-pointer focus:outline-none`;
+
+                const numSpan = document.createElement("span");
+                numSpan.className = "text-3xl sm:text-4xl leading-none";
+                numSpan.textContent = String(choiceVal);
+
+                const subHint = document.createElement("span");
+                subHint.className = "text-xs sm:text-sm font-extrabold opacity-90";
+                subHint.textContent = wordLabel;
+
+                selectBtn.appendChild(numSpan);
+                selectBtn.appendChild(subHint);
+                selectBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleChoiceClick(choiceVal, optionCard);
+                };
+
+                // 2) Бөлек дыбыс батырмасы (тек сол санды қазақша оқиды, жауапты таңдамайды)
+                const voiceBtn = document.createElement("button");
+                voiceBtn.type = "button";
+                voiceBtn.className = `option-audio-btn btn-3d ${pal.voiceBtn} shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border-2 border-b-4 shadow-sm flex flex-col items-center justify-center cursor-pointer focus:outline-none`;
+                voiceBtn.setAttribute("aria-label", `${wordLabel} санын қазақша тыңдау`);
+                voiceBtn.title = `«${wordLabel}» деп оқу`;
+                voiceBtn.innerHTML = `<span class="text-lg sm:text-xl leading-none">🔊</span><span class="text-[10px] font-black mt-0.5">Оқу</span>`;
+                voiceBtn.onclick = (e) => speakSingleChoice(choiceVal, voiceBtn, e);
+
+                optionCard.appendChild(selectBtn);
+                optionCard.appendChild(voiceBtn);
+                container.appendChild(optionCard);
+            });
+        }
+
+        function spawnConfetti(anchorEl) {
+            const rect = anchorEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const colors = ["#22c55e", "#facc15", "#38bdf8", "#f97316", "#ec4899"];
+
+            for (let i = 0; i < 18; i++) {
+                const piece = document.createElement("div");
+                piece.className = "confetti-piece";
+                const angle = (Math.random() - 0.5) * 180;
+                piece.style.left = `${centerX + angle}px`;
+                piece.style.top = `${centerY - 10}px`;
+                piece.style.backgroundColor = colors[i % colors.length];
+                piece.style.animationDelay = `${Math.random() * 0.14}s`;
+                document.body.appendChild(piece);
+                setTimeout(() => piece.remove(), 3500);
+            }
+        }
+
+        function handleChoiceClick(selectedVal, optionCardEl) {
+            if (state.answeredCurrent) return;
+            getAudioContext();
+
+            const task = getCurrentTask();
+            if (!task) return;
+
+            const feedback = document.getElementById("feedback-banner");
+            const chosenWord = capitalizeKk(numberToKk(selectedVal));
+
+            if (selectedVal === task.answer) {
+                state.answeredCurrent = true;
+                playTone("correct");
+                spawnConfetti(optionCardEl);
+
+                const allCards = Array.from(document.querySelectorAll("#choices-container .option-card"));
+                allCards.forEach(card => {
+                    const cardVal = Number(card.dataset.choiceValue);
+                    const selectBtn = card.querySelector(".option-select-btn");
+                    if (selectBtn) {
+                        selectBtn.disabled = true;
+                    }
+
+                    if (cardVal === task.answer) {
+                        card.className = "option-card bg-emerald-100 border-2 border-emerald-500 rounded-3xl p-2.5 sm:p-3 shadow-xl flex items-center gap-2.5 min-h-[92px] sm:min-h-[112px] animate-celebrate";
+                        if (selectBtn) {
+                            selectBtn.className = "option-select-btn flex-1 h-full min-h-[74px] sm:min-h-[88px] rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white border-b-6 border-green-800 px-3 py-2 font-black flex flex-col items-center justify-center gap-0.5";
+                        }
+                    } else {
+                        card.classList.add("opacity-45");
+                    }
+                });
+
+                renderEquation(task, true);
+
+                const summaryPill = document.getElementById("visual-summary-pill");
+                summaryPill.textContent = `Дұрыс: ${task.answer} ${task.item.name}`;
+                summaryPill.classList.remove("hidden");
+
+                const opKey = state.operation;
+                if (!state.solved[opKey].has(task.num)) {
+                    state.solved[opKey].add(task.num);
+                    state.stars += 1;
+                    document.getElementById("total-stars").textContent = String(state.stars);
+                }
+
+                const praises = ["Керемет! Дұрыс!", "Жарайсың! Дұрыс!", "Тамаша! Дұрыс!", "Өте жақсы! Дұрыс!"];
+                const praise = praises[task.num % praises.length];
+                feedback.className = "w-full min-h-[42px] bg-emerald-100 border-2 border-emerald-400 rounded-2xl px-4 py-2 flex items-center justify-center text-sm sm:text-base font-black text-emerald-900";
+                feedback.textContent = `🎉 ${praise} Жауабы — ${task.answer} (${chosenWord}).`;
+
+                if (state.currentIndex[opKey] < TASK_COUNT - 1) {
+                    const autoNextTimer = setTimeout(() => {
+                        if (state.operation === opKey && state.answeredCurrent) {
+                            nextTask();
+                        }
+                    }, 1850);
+                    animationTimers.push(autoNextTimer);
+                }
+            } else {
+                playTone("wrong");
+                optionCardEl.classList.remove("animate-shake");
+                void optionCardEl.offsetWidth;
+                optionCardEl.classList.add("animate-shake");
+
+                feedback.className = "w-full min-h-[42px] bg-rose-100 border-2 border-rose-300 rounded-2xl px-4 py-2 flex items-center justify-center text-sm sm:text-base font-black text-rose-800";
+                feedback.textContent = `🤔 Бұл ${selectedVal} (${chosenWord}). Қайталап көр немесе «Түсіндір» батырмасын бас!`;
+            }
+        }
+
+        // ============================================================================
+        // 8. НАВИГАЦИЯ ЖӘНЕ 1–30 ТІЗІМ МОДАЛДЫ ТЕРЕЗЕСІ
+        // ============================================================================
+        function prevTask() {
+            const op = state.operation;
+            if (!op) return;
+            if (state.currentIndex[op] > 0) {
+                loadTask(state.currentIndex[op] - 1, true);
+            }
+        }
+
+        function nextTask() {
+            const op = state.operation;
+            if (!op) return;
+            if (state.currentIndex[op] < TASK_COUNT - 1) {
+                loadTask(state.currentIndex[op] + 1, true);
+            } else {
+                speakKazakh("Құттықтаймын! Барлық отыз тапсырманы орындадың!", { fallbackTone: "correct" });
+                goHome();
+            }
+        }
+
+        function openTaskListModal() {
+            const op = state.operation;
+            if (!op) return;
+            const modal = document.getElementById("task-list-modal");
+            const title = document.getElementById("modal-title");
+            const grid = document.getElementById("modal-tasks-grid");
+
+            title.textContent = op === "add"
+                ? "➕ Қосу — 1–30 тапсырмалар"
+                : "➖ Азайту — 1–30 тапсырмалар";
+
+            grid.innerHTML = "";
+            const currentNum = state.currentIndex[op] + 1;
+
+            for (let n = 1; n <= TASK_COUNT; n++) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.textContent = String(n);
+                const isSolved = state.solved[op].has(n);
+                const isCurrent = n === currentNum;
+
+                let cls = "py-2.5 rounded-xl font-black text-xs sm:text-sm border-2 transition-all cursor-pointer ";
+                if (isCurrent) {
+                    cls += "bg-amber-400 text-amber-950 border-amber-600 scale-105 shadow";
+                } else if (isSolved) {
+                    cls += "bg-emerald-100 text-emerald-800 border-emerald-400";
+                } else {
+                    cls += "bg-slate-50 hover:bg-sky-50 text-slate-700 border-slate-200";
+                }
+
+                btn.className = cls;
+                btn.onclick = () => {
+                    closeTaskListModal();
+                    loadTask(n - 1, true);
+                };
+                grid.appendChild(btn);
+            }
+
+            modal.classList.remove("hidden");
+        }
+
+        function closeTaskListModal() {
+            document.getElementById("task-list-modal").classList.add("hidden");
+        }
+
+        // Бастапқы статистиканы орнату
+        window.addEventListener("DOMContentLoaded", () => {
+            updateHomeStats();
+            if ("speechSynthesis" in window) {
+                try {
+                    window.speechSynthesis.getVoices();
+                    if (typeof window.speechSynthesis.addEventListener === "function") {
+                        window.speechSynthesis.addEventListener("voiceschanged", () => {
+                            window.speechSynthesis.getVoices();
+                        });
+                    }
+                } catch (e) {}
+            }
+        });
+    </script>
+</body>
+</html>

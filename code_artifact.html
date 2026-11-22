@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>МЕМЛЕКЕТТЕР — Балаларға арналған оқу ойыны</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js және TopoJSON (Интерактивті әлем картасы үшін) -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <!-- Google Fonts: Nunito & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Nunito', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #fef9c3 100%);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        .btn-3d {
+            transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15) !important;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px) rotate(-1deg); }
+            40% { transform: translateX(8px) rotate(1deg); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes popSuccess {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.07); }
+            75% { transform: scale(0.97); }
+            100% { transform: scale(1.02); }
+        }
+        .animate-pop {
+            animation: popSuccess 0.5s ease-out forwards;
+        }
+
+        @keyframes pulseTarget {
+            0%, 100% { fill: #facc15 !important; stroke: #ca8a04 !important; stroke-width: 1.8px !important; }
+            50% { fill: #ef4444 !important; stroke: #991b1b !important; stroke-width: 2.8px !important; }
+        }
+        .country-hint {
+            animation: pulseTarget 0.8s infinite ease-in-out !important;
+        }
+
+        /* Үлкен интерактивті карта стильдері */
+        #world-map-svg {
+            touch-action: none;
+            cursor: grab;
+            background: radial-gradient(circle at center, #bae6fd 0%, #38bdf8 100%);
+        }
+        #world-map-svg:active {
+            cursor: grabbing;
+        }
+        .country-path {
+            transition: filter 0.16s ease, stroke-width 0.16s ease;
+            cursor: pointer;
+        }
+        .country-playable {
+            stroke: #334155;
+            stroke-width: 0.65px;
+        }
+        .country-playable:hover {
+            filter: brightness(1.08) saturate(1.15);
+            stroke: #0f172a;
+            stroke-width: 1.1px;
+        }
+        .country-nonplayable {
+            fill: #e2e8f0;
+            stroke: #94a3b8;
+            stroke-width: 0.35px;
+        }
+        .country-found {
+            fill: #16a34a !important;
+            stroke: #052e16 !important;
+            stroke-width: 1.1px !important;
+        }
+
+        .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 9999;
+            animation: confettiFall 1.3s ease-out forwards;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(220px) rotate(540deg) scale(0.4); opacity: 0; }
+        }
+
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: floatSlow 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- Жоғарғы навигация панелі -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b-2 border-sky-200 px-3 py-2 sm:px-6 shadow-sm">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            <button id="btn-home" onclick="goHome()" class="btn-3d hidden items-center gap-1.5 bg-sky-100 hover:bg-sky-200 text-sky-800 font-extrabold px-3 py-1.5 rounded-2xl border-b-4 border-sky-300 text-sm sm:text-base">
+                <span class="text-lg">🏠</span>
+                <span>Мәзір</span>
+            </button>
+
+            <div onclick="goHome()" class="flex items-center gap-2 cursor-pointer">
+                <span class="text-2xl sm:text-3xl animate-float">🌍</span>
+                <h1 class="text-lg sm:text-2xl font-black tracking-tight bg-gradient-to-r from-sky-600 via-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                    МЕМЛЕКЕТТЕР
+                </h1>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="btn-sound-toggle" onclick="toggleSound()" title="Дыбысты қосу/өшіру" class="btn-3d bg-amber-100 hover:bg-amber-200 text-amber-800 p-2 rounded-2xl border-b-4 border-amber-300 text-lg leading-none">
+                    🔊
+                </button>
+                <div class="flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-3.5 py-1.5 rounded-2xl shadow-sm border-b-4 border-amber-500">
+                    <span class="text-lg">⭐</span>
+                    <span id="star-count" class="text-base sm:text-lg">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Негізгі контент аймағы -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-2 py-2.5 sm:px-4 sm:py-3 flex flex-col">
+
+        <!-- ================= 1. БАСТЫ ЭКРАН (МӘЗІР) ================= -->
+        <section id="screen-home" class="flex-1 flex flex-col justify-center items-center text-center my-auto py-2">
+            <div class="bg-white/95 rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-sky-200 w-full max-w-2xl">
+                <div class="inline-flex items-center gap-2 bg-sky-100 text-sky-800 font-extrabold px-4 py-1.5 rounded-full text-xs sm:text-sm mb-3">
+                    <span>🇰🇿</span>
+                    <span>40 мемлекет • Түрлі-түсті интерактивті карта</span>
+                </div>
+
+                <h2 class="text-2xl sm:text-4xl font-black text-slate-800 mb-2">
+                    Әлем елдерін бірге үйренейік!
+                </h2>
+                <p class="text-slate-600 font-semibold text-sm sm:text-base mb-6 max-w-lg mx-auto">
+                    Ойын режимін таңда, дауысты тыңда және мемлекеттердің тулары мен әлем картасындағы орнын тап!
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                    <button onclick="startFlagGame()" class="btn-3d group relative overflow-hidden bg-gradient-to-br from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-3xl p-5 text-left shadow-lg border-b-8 border-emerald-700 flex flex-col justify-between min-h-[165px]">
+                        <div class="flex justify-between items-start">
+                            <span class="bg-white/25 backdrop-blur-sm text-white font-black text-xs px-3 py-1 rounded-full">
+                                1-РЕЖИМ
+                            </span>
+                            <span class="text-4xl sm:text-5xl group-hover:scale-110 transition-transform">🚩</span>
+                        </div>
+                        <div class="mt-4">
+                            <h3 class="text-xl sm:text-2xl font-black leading-tight">Туды тап</h3>
+                            <p class="text-emerald-50 text-xs sm:text-sm font-bold mt-1">
+                                Аталған мемлекеттің дұрыс туын таңда!
+                            </p>
+                        </div>
+                    </button>
+
+                    <button onclick="startMapGame()" class="btn-3d group relative overflow-hidden bg-gradient-to-br from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-3xl p-5 text-left shadow-lg border-b-8 border-indigo-800 flex flex-col justify-between min-h-[165px]">
+                        <div class="flex justify-between items-start">
+                            <span class="bg-white/25 backdrop-blur-sm text-white font-black text-xs px-3 py-1 rounded-full">
+                                2-РЕЖИМ
+                            </span>
+                            <span class="text-4xl sm:text-5xl group-hover:scale-110 transition-transform">🗺️</span>
+                        </div>
+                        <div class="mt-4">
+                            <h3 class="text-xl sm:text-2xl font-black leading-tight">Мемлекетті картадан тап</h3>
+                            <p class="text-sky-100 text-xs sm:text-sm font-bold mt-1">
+                                Үлкен түрлі-түсті картаны жылжытып, сұралған елді көрсет!
+                            </p>
+                        </div>
+                    </button>
+                </div>
+
+                <button onclick="openAtlas()" class="btn-3d w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-amber-950 rounded-2xl p-4 font-black text-base sm:text-lg shadow-md border-b-6 border-orange-500 flex items-center justify-center gap-3">
+                    <span class="text-2xl">📚</span>
+                    <span>Атлас: Барлық 40 мемлекетті үйрену</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= 2. 1-РЕЖИМ: ТУДЫ ТАП ================= -->
+        <section id="screen-flag-game" class="hidden flex-1 flex flex-col justify-between gap-4 max-w-5xl mx-auto w-full">
+            <div class="bg-white/95 rounded-2xl p-3 shadow-sm border-2 border-emerald-200 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+                    <button id="opt-2-btn" onclick="setFlagOptionCount(2)" class="px-3.5 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm transition-all bg-emerald-500 text-white shadow">
+                        2 ту (Оңай)
+                    </button>
+                    <button id="opt-4-btn" onclick="setFlagOptionCount(4)" class="px-3.5 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm transition-all text-slate-600 hover:text-slate-900">
+                        4 ту (Орташа)
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-slate-600">
+                    <span>Дұрыс жауап:</span>
+                    <span id="flag-streak" class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg">0</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-4 sm:p-6 shadow-lg border-4 border-sky-200 text-center relative">
+                <p class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-sky-600 mb-1">
+                    Мұқият тыңда және туды таңда
+                </p>
+                <div class="flex items-center justify-center gap-3 flex-wrap">
+                    <h2 id="flag-prompt-text" class="text-2xl sm:text-4xl font-black text-slate-800">
+                        Қазақстанның туын тап!
+                    </h2>
+                    <button onclick="repeatFlagPrompt()" aria-label="Қайта тыңдау" class="btn-3d bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-2xl shadow-md border-b-4 border-sky-700 text-xl sm:text-2xl">
+                        🔊
+                    </button>
+                </div>
+
+                <div id="flag-feedback" class="min-h-[32px] mt-2 flex items-center justify-center">
+                    <span class="text-slate-400 text-sm font-bold">Төмендегі тулардың бірін бас 👇</span>
+                </div>
+            </div>
+
+            <div id="flags-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 my-auto"></div>
+        </section>
+
+        <!-- ================= 3. 2-РЕЖИМ: ҮЛКЕН ТҮРЛІ-ТҮСТІ КАРТА ================= -->
+        <section id="screen-map-game" class="hidden flex-1 flex flex-col gap-2.5">
+            <div class="bg-white/95 rounded-2xl px-3.5 py-2.5 shadow-md border-3 border-indigo-200 flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 text-center sm:text-left">
+                    <button onclick="repeatMapPrompt()" class="btn-3d shrink-0 bg-indigo-500 hover:bg-indigo-600 text-white w-11 h-11 rounded-2xl shadow border-b-4 border-indigo-700 flex items-center justify-center text-xl">
+                        🔊
+                    </button>
+                    <div>
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-500 block leading-none">
+                            Картаны жылжытып, сұралған елді бас
+                        </span>
+                        <h2 id="map-prompt-text" class="text-lg sm:text-2xl font-black text-slate-800 leading-tight mt-0.5">
+                            Қазақстанды картадан тап!
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                    <div id="map-feedback" class="text-xs sm:text-sm font-extrabold text-slate-600 px-2 truncate max-w-[230px]">
+                        Мемлекетті бас 👆
+                    </div>
+                    <button onclick="showMapHint()" class="btn-3d shrink-0 bg-amber-400 hover:bg-amber-500 text-amber-950 font-black px-3.5 py-2 rounded-2xl border-b-4 border-amber-600 text-xs sm:text-sm flex items-center gap-1">
+                        <span>💡</span>
+                        <span>Көмек</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="map-container" class="relative flex-1 w-full h-[72vh] sm:h-[76vh] min-h-[480px] bg-sky-300 rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
+                <div id="map-loader" class="absolute inset-0 bg-sky-100/95 z-20 flex flex-col items-center justify-center p-4 text-center">
+                    <div class="text-5xl animate-bounce mb-3">🌍</div>
+                    <p class="text-lg font-black text-sky-900">Үлкен әлем картасы жүктелуде...</p>
+                    <p class="text-xs font-bold text-sky-700 mt-1">Бірнеше секунд күте тұрыңыз</p>
+                </div>
+
+                <div class="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-xs px-3 py-1.5 rounded-xl shadow text-xs font-extrabold text-slate-700 pointer-events-none">
+                    ✋ Картаны ұстап жылжыт • 🔍 + / − батырмасымен үлкейт
+                </div>
+
+                <svg id="world-map-svg" class="w-full h-full block"></svg>
+
+                <div class="absolute bottom-4 right-4 z-10 flex flex-col gap-2.5">
+                    <button onclick="zoomMapBy(1.7)" aria-label="Үлкейту" class="btn-3d bg-white hover:bg-sky-50 text-slate-900 font-black w-14 h-14 rounded-2xl shadow-xl border-b-4 border-slate-300 text-3xl flex items-center justify-center">
+                        +
+                    </button>
+                    <button onclick="zoomMapBy(0.58)" aria-label="Кішірейту" class="btn-3d bg-white hover:bg-sky-50 text-slate-900 font-black w-14 h-14 rounded-2xl shadow-xl border-b-4 border-slate-300 text-3xl flex items-center justify-center">
+                        −
+                    </button>
+                    <button onclick="resetMapZoom()" aria-label="Бүкіл әлем" class="btn-3d bg-sky-600 hover:bg-sky-700 text-white font-black px-3.5 h-12 rounded-2xl shadow-xl border-b-4 border-sky-800 text-xs sm:text-sm flex items-center justify-center gap-1.5">
+                        <span>🌍</span>
+                        <span>Бүкіл әлем</span>
+                    </button>
+                </div>
+
+                <div id="map-success-overlay" class="hidden absolute inset-0 bg-slate-900/45 backdrop-blur-xs z-20 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-4 border-emerald-400 animate-pop">
+                        <div class="text-4xl mb-2">🎉⭐🎉</div>
+                        <img id="map-success-flag" src="" alt="Ту" class="w-28 h-20 object-cover mx-auto rounded-xl shadow-md border-2 border-slate-200 mb-3">
+                        <h3 id="map-success-title" class="text-2xl font-black text-emerald-700 mb-1">
+                            Жарайсың!
+                        </h3>
+                        <p id="map-success-desc" class="text-slate-600 font-bold text-sm mb-4">
+                            Бұл — Қазақстан!
+                        </p>
+                        <button onclick="nextMapQuestion()" class="btn-3d w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl border-b-4 border-emerald-700 text-lg">
+                            Келесі мемлекет ➡️
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 4. АТЛАС / ҮЙРЕНУ БӨЛІМІ ================= -->
+        <section id="screen-atlas" class="hidden flex-1 flex flex-col gap-4 max-w-6xl mx-auto w-full">
+            <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-md border-4 border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2">
+                        <span>📚</span>
+                        <span>40 Мемлекет Атласы</span>
+                    </h2>
+                    <p class="text-xs sm:text-sm font-bold text-slate-500">
+                        Кез келген мемлекетті басып, оның атауын тыңда!
+                    </p>
+                </div>
+                <input id="atlas-search" oninput="renderAtlas()" type="text" placeholder="🔍 Мемлекетті іздеу..." class="w-full sm:w-64 px-4 py-2.5 rounded-2xl border-2 border-amber-300 focus:border-amber-500 focus:outline-none font-bold text-sm bg-amber-50/50">
+            </div>
+
+            <div id="atlas-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 pb-6"></div>
+        </section>
+
+    </main>
+
+    <script>
+        // Әр мемлекетке жеке ашық әрі жағымды түс берілген (color)
+        const COUNTRIES = [
+            { id: 1, iso2: "kz", num: "398", name: "Қазақстан", genitive: "Қазақстанның", accusative: "Қазақстанды", emoji: "🇰🇿", coords: [66.9, 48.0], color: "#38bdf8" },
+            { id: 2, iso2: "us", num: "840", name: "АҚШ", genitive: "АҚШ-тың", accusative: "АҚШ-ты", emoji: "🇺🇸", coords: [-98.5, 39.8], color: "#fb7185" },
+            { id: 3, iso2: "gb", num: "826", name: "Ұлыбритания", genitive: "Ұлыбританияның", accusative: "Ұлыбританияны", emoji: "🇬🇧", coords: [-2.5, 54.0], color: "#f472b6" },
+            { id: 4, iso2: "ru", num: "643", name: "Ресей", genitive: "Ресейдің", accusative: "Ресейді", emoji: "🇷🇺", coords: [95.0, 62.0], color: "#c084fc" },
+            { id: 5, iso2: "cn", num: "156", name: "Қытай", genitive: "Қытайдың", accusative: "Қытайды", emoji: "🇨🇳", coords: [104.1, 35.8], color: "#f87171" },
+            { id: 6, iso2: "jp", num: "392", name: "Жапония", genitive: "Жапонияның", accusative: "Жапонияны", emoji: "🇯🇵", coords: [138.2, 36.2], color: "#fda4af" },
+            { id: 7, iso2: "kr", num: "410", name: "Оңтүстік Корея", genitive: "Оңтүстік Кореяның", accusative: "Оңтүстік Кореяны", emoji: "🇰🇷", coords: [127.7, 36.5], color: "#60a5fa" },
+            { id: 8, iso2: "tr", num: "792", name: "Түркия", genitive: "Түркияның", accusative: "Түркияны", emoji: "🇹🇷", coords: [35.2, 39.0], color: "#fb923c" },
+            { id: 9, iso2: "fr", num: "250", name: "Франция", genitive: "Францияның", accusative: "Францияны", emoji: "🇫🇷", coords: [2.2, 46.6], color: "#818cf8" },
+            { id: 10, iso2: "de", num: "276", name: "Германия", genitive: "Германияның", accusative: "Германияны", emoji: "🇩🇪", coords: [10.4, 51.1], color: "#facc15" },
+            { id: 11, iso2: "it", num: "380", name: "Италия", genitive: "Италияның", accusative: "Италияны", emoji: "🇮🇹", coords: [12.5, 42.8], color: "#4ade80" },
+            { id: 12, iso2: "es", num: "724", name: "Испания", genitive: "Испанияның", accusative: "Испанияны", emoji: "🇪🇸", coords: [-3.7, 40.4], color: "#fbbf24" },
+            { id: 13, iso2: "pt", num: "620", name: "Португалия", genitive: "Португалияның", accusative: "Португалияны", emoji: "🇵🇹", coords: [-8.2, 39.5], color: "#34d399" },
+            { id: 14, iso2: "br", num: "076", name: "Бразилия", genitive: "Бразилияның", accusative: "Бразилияны", emoji: "🇧🇷", coords: [-51.9, -10.8], color: "#a3e635" },
+            { id: 15, iso2: "ar", num: "032", name: "Аргентина", genitive: "Аргентинаның", accusative: "Аргентинаны", emoji: "🇦🇷", coords: [-63.6, -34.6], color: "#7dd3fc" },
+            { id: 16, iso2: "ca", num: "124", name: "Канада", genitive: "Канаданың", accusative: "Канаданы", emoji: "🇨🇦", coords: [-106.3, 56.1], color: "#fdba74" },
+            { id: 17, iso2: "au", num: "036", name: "Австралия", genitive: "Австралияның", accusative: "Австралияны", emoji: "🇦🇺", coords: [133.7, -25.2], color: "#fcd34d" },
+            { id: 18, iso2: "in", num: "356", name: "Үндістан", genitive: "Үндістанның", accusative: "Үндістанды", emoji: "🇮🇳", coords: [78.9, 22.5], color: "#f97316" },
+            { id: 19, iso2: "eg", num: "818", name: "Мысыр", genitive: "Мысырдың", accusative: "Мысырды", emoji: "🇪🇬", coords: [30.8, 26.8], color: "#fde047" },
+            { id: 20, iso2: "sa", num: "682", name: "Сауд Арабиясы", genitive: "Сауд Арабиясының", accusative: "Сауд Арабиясын", emoji: "🇸🇦", coords: [45.0, 23.8], color: "#86efac" },
+            { id: 21, iso2: "ae", num: "784", name: "БАӘ", genitive: "БАӘ-нің", accusative: "БАӘ-ні", emoji: "🇦🇪", coords: [54.3, 24.2], smallHotspot: true, color: "#f43f5e" },
+            { id: 22, iso2: "qa", num: "634", name: "Катар", genitive: "Катардың", accusative: "Катарды", emoji: "🇶🇦", coords: [51.2, 25.3], smallHotspot: true, color: "#d946ef" },
+            { id: 23, iso2: "mx", num: "484", name: "Мексика", genitive: "Мексиканың", accusative: "Мексиканы", emoji: "🇲🇽", coords: [-102.5, 23.6], color: "#2dd4bf" },
+            { id: 24, iso2: "nl", num: "528", name: "Нидерланд", genitive: "Нидерландтың", accusative: "Нидерландты", emoji: "🇳🇱", coords: [5.3, 52.2], color: "#fb923c" },
+            { id: 25, iso2: "be", num: "056", name: "Бельгия", genitive: "Бельгияның", accusative: "Бельгияны", emoji: "🇧🇪", coords: [4.4, 50.6], color: "#e879f9" },
+            { id: 26, iso2: "ch", num: "756", name: "Швейцария", genitive: "Швейцарияның", accusative: "Швейцарияны", emoji: "🇨🇭", coords: [8.2, 46.8], color: "#fda4af" },
+            { id: 27, iso2: "se", num: "752", name: "Швеция", genitive: "Швецияның", accusative: "Швецияны", emoji: "🇸🇪", coords: [15.5, 62.0], color: "#38bdf8" },
+            { id: 28, iso2: "no", num: "578", name: "Норвегия", genitive: "Норвегияның", accusative: "Норвегияны", emoji: "🇳🇴", coords: [8.5, 61.5], color: "#a78bfa" },
+            { id: 29, iso2: "dk", num: "208", name: "Дания", genitive: "Данияның", accusative: "Данияны", emoji: "🇩🇰", coords: [9.5, 56.1], color: "#fb7185" },
+            { id: 30, iso2: "fi", num: "246", name: "Финляндия", genitive: "Финляндияның", accusative: "Финляндияны", emoji: "🇫🇮", coords: [26.0, 63.0], color: "#67e8f9" },
+            { id: 31, iso2: "pl", num: "616", name: "Польша", genitive: "Польшаның", accusative: "Польшаны", emoji: "🇵🇱", coords: [19.1, 52.0], color: "#f9a8d4" },
+            { id: 32, iso2: "ua", num: "804", name: "Украина", genitive: "Украинаның", accusative: "Украинаны", emoji: "🇺🇦", coords: [31.1, 49.0], color: "#fde047" },
+            { id: 33, iso2: "gr", num: "300", name: "Грекия", genitive: "Грекияның", accusative: "Грекияны", emoji: "🇬🇷", coords: [22.9, 39.0], color: "#93c5fd" },
+            { id: 34, iso2: "th", num: "764", name: "Таиланд", genitive: "Таиландтың", accusative: "Таиландты", emoji: "🇹🇭", coords: [101.0, 15.5], color: "#c4b5fd" },
+            { id: 35, iso2: "id", num: "360", name: "Индонезия", genitive: "Индонезияның", accusative: "Индонезияны", emoji: "🇮🇩", coords: [113.9, -1.5], color: "#fda4af" },
+            { id: 36, iso2: "my", num: "458", name: "Малайзия", genitive: "Малайзияның", accusative: "Малайзияны", emoji: "🇲🇾", coords: [102.2, 4.2], color: "#5eead4" },
+            { id: 37, iso2: "sg", num: "702", name: "Сингапур", genitive: "Сингапурдың", accusative: "Сингапурды", emoji: "🇸🇬", coords: [103.8, 1.35], smallHotspot: true, color: "#f43f5e" },
+            { id: 38, iso2: "za", num: "710", name: "Оңтүстік Африка", genitive: "Оңтүстік Африканың", accusative: "Оңтүстік Африканы", emoji: "🇿🇦", coords: [24.0, -29.0], color: "#bef264" },
+            { id: 39, iso2: "ma", num: "504", name: "Марокко", genitive: "Марокконың", accusative: "Марокконы", emoji: "🇲🇦", coords: [-7.1, 31.8], color: "#fdba74" },
+            { id: 40, iso2: "nz", num: "554", name: "Жаңа Зеландия", genitive: "Жаңа Зеландияның", accusative: "Жаңа Зеландияны", emoji: "🇳🇿", coords: [172.5, -41.5], color: "#6ee7b7" }
+        ];
+
+        const COUNTRY_BY_NUM = {};
+        COUNTRIES.forEach(c => {
+            COUNTRY_BY_NUM[c.num] = c;
+            COUNTRY_BY_NUM[String(Number(c.num))] = c;
+        });
+
+        let stars = Number(localStorage.getItem('memleketter_stars') || 0);
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        let flagOptionCount = 2;
+        let currentFlagTarget = null;
+        let flagStreak = 0;
+        let flagLocked = false;
+        let lastFlagId = null;
+
+        let mapInitialized = false;
+        let currentMapTarget = null;
+        let lastMapId = null;
+        let mapSvg, mapG, mapProjection, mapPath, mapZoom;
+        let mapWidth = 1000, mapHeight = 620;
+
+        document.getElementById('star-count').textContent = stars;
+
+        function addStar(amount = 1) {
+            stars += amount;
+            localStorage.setItem('memleketter_stars', stars);
+            const el = document.getElementById('star-count');
+            el.textContent = stars;
+            el.parentElement.classList.remove('animate-pop');
+            void el.parentElement.offsetWidth;
+            el.parentElement.classList.add('animate-pop');
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('btn-sound-toggle');
+            btn.textContent = soundEnabled ? '🔊' : '🔇';
+            btn.className = soundEnabled
+                ? 'btn-3d bg-amber-100 hover:bg-amber-200 text-amber-800 p-2 rounded-2xl border-b-4 border-amber-300 text-lg leading-none'
+                : 'btn-3d bg-slate-200 hover:bg-slate-300 text-slate-500 p-2 rounded-2xl border-b-4 border-slate-300 text-lg leading-none';
+            if (!soundEnabled && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function playToneEffect(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+
+                if (type === 'success') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + i * 0.08);
+                        gain.gain.setValueAtTime(0.001, now + i * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.22, now + i * 0.08 + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.35);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.08);
+                        osc.stop(now + i * 0.08 + 0.36);
+                    });
+                } else if (type === 'error') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(240, now);
+                    osc.frequency.linearRampToValueAtTime(175, now + 0.25);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'pop') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(900, now + 0.08);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                }
+            } catch (e) {}
+        }
+
+        function speakKazakh(text) {
+            if (!soundEnabled || !('speechSynthesis' in window)) return;
+            try {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                const voices = window.speechSynthesis.getVoices();
+                const kkVoice = voices.find(v => v.lang.toLowerCase().includes('kk'));
+                const ruVoice = voices.find(v => v.lang.toLowerCase().includes('ru'));
+
+                if (kkVoice) {
+                    utterance.voice = kkVoice;
+                    utterance.lang = 'kk-KZ';
+                } else if (ruVoice) {
+                    utterance.voice = ruVoice;
+                    utterance.lang = 'ru-RU';
+                } else {
+                    utterance.lang = 'kk-KZ';
+                }
+                utterance.rate = 0.92;
+                utterance.pitch = 1.08;
+                window.speechSynthesis.speak(utterance);
+            } catch (err) {}
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
+
+        function spawnConfetti() {
+            const colors = ['#facc15', '#22c55e', '#38bdf8', '#f472b6', '#fb923c', '#a855f7'];
+            for (let i = 0; i < 28; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = (15 + Math.random() * 70) + 'vw';
+                piece.style.top = (25 + Math.random() * 25) + 'vh';
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+                document.body.appendChild(piece);
+                setTimeout(() => piece.remove(), 4500);
+            }
+        }
+
+        function getFlagUrl(iso2) {
+            return `https://flagcdn.com/w320/${iso2.toLowerCase()}.png`;
+        }
+
+        function getFallbackFlagSvg(country) {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="213" viewBox="0 0 320 213">
+                <rect width="320" height="213" rx="16" fill="#0ea5e9"/>
+                <text x="160" y="110" font-size="76" text-anchor="middle" dominant-baseline="middle">${country.emoji}</text>
+                <text x="160" y="182" font-family="sans-serif" font-weight="bold" font-size="22" fill="#ffffff" text-anchor="middle">${country.name}</text>
+            </svg>`;
+            return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+        }
+
+        function showScreen(screenId) {
+            ['screen-home', 'screen-flag-game', 'screen-map-game', 'screen-atlas'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+
+            const homeBtn = document.getElementById('btn-home');
+            if (screenId === 'screen-home') {
+                homeBtn.classList.add('hidden');
+                homeBtn.classList.remove('flex');
+            } else {
+                homeBtn.classList.remove('hidden');
+                homeBtn.classList.add('flex');
+            }
+        }
+
+        function goHome() {
+            playToneEffect('pop');
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            showScreen('screen-home');
+        }
+
+        // ================= 1-РЕЖИМ: ТУДЫ ТАП =================
+        function startFlagGame() {
+            playToneEffect('pop');
+            showScreen('screen-flag-game');
+            nextFlagQuestion();
+        }
+
+        function setFlagOptionCount(count) {
+            playToneEffect('pop');
+            flagOptionCount = count;
+            const btn2 = document.getElementById('opt-2-btn');
+            const btn4 = document.getElementById('opt-4-btn');
+
+            if (count === 2) {
+                btn2.className = 'px-3.5 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm transition-all bg-emerald-500 text-white shadow';
+                btn4.className = 'px-3.5 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm transition-all text-slate-600 hover:text-slate-900';
+            } else {
+                btn4.className = 'px-3.5 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm transition-all bg-emerald-500 text-white shadow';
+                btn2.className = 'px-3.5 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm transition-all text-slate-600 hover:text-slate-900';
+            }
+            nextFlagQuestion();
+        }
+
+        function repeatFlagPrompt() {
+            if (!currentFlagTarget) return;
+            speakKazakh(`${currentFlagTarget.genitive} туын тап!`);
+        }
+
+        function nextFlagQuestion() {
+            flagLocked = false;
+            document.getElementById('flag-feedback').innerHTML = `<span class="text-slate-400 text-sm font-bold">Төмендегі тулардың бірін бас 👇</span>`;
+
+            let candidates = COUNTRIES.filter(c => c.id !== lastFlagId);
+            currentFlagTarget = candidates[Math.floor(Math.random() * candidates.length)];
+            lastFlagId = currentFlagTarget.id;
+
+            const promptText = `${currentFlagTarget.genitive} туын тап!`;
+            document.getElementById('flag-prompt-text').textContent = promptText;
+            speakKazakh(promptText);
+
+            const distractors = COUNTRIES
+                .filter(c => c.id !== currentFlagTarget.id)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, flagOptionCount - 1);
+
+            const options = [currentFlagTarget, ...distractors].sort(() => Math.random() - 0.5);
+
+            const grid = document.getElementById('flags-grid');
+            grid.className = flagOptionCount === 2
+                ? 'grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 my-auto max-w-2xl mx-auto w-full'
+                : 'grid grid-cols-2 gap-3 sm:gap-5 my-auto max-w-2xl mx-auto w-full';
+
+            grid.innerHTML = '';
+            options.forEach(country => {
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'btn-3d bg-white hover:bg-sky-50 rounded-3xl p-3 sm:p-5 shadow-lg border-4 border-slate-200 hover:border-sky-300 flex flex-col items-center justify-center transition-all relative overflow-hidden group';
+                card.onclick = () => handleFlagChoice(country, card);
+
+                const imgWrapper = document.createElement('div');
+                imgWrapper.className = 'w-full aspect-[3/2] max-h-44 rounded-2xl overflow-hidden shadow-md border-2 border-slate-100 bg-slate-100 flex items-center justify-center';
+
+                const img = document.createElement('img');
+                img.src = getFlagUrl(country.iso2);
+                img.alt = country.name;
+                img.className = 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-300';
+                img.onerror = function() {
+                    this.onerror = null;
+                    this.src = getFallbackFlagSvg(country);
+                };
+
+                imgWrapper.appendChild(img);
+                card.appendChild(imgWrapper);
+                grid.appendChild(card);
+            });
+        }
+
+        function handleFlagChoice(selectedCountry, cardEl) {
+            if (flagLocked) return;
+            const feedback = document.getElementById('flag-feedback');
+
+            if (selectedCountry.id === currentFlagTarget.id) {
+                flagLocked = true;
+                flagStreak++;
+                document.getElementById('flag-streak').textContent = flagStreak;
+                addStar(1);
+                playToneEffect('success');
+                spawnConfetti();
+
+                cardEl.classList.remove('border-slate-200', 'hover:border-sky-300');
+                cardEl.classList.add('border-emerald-500', 'bg-emerald-50', 'animate-pop');
+
+                const label = document.createElement('div');
+                label.className = 'mt-2.5 bg-emerald-500 text-white font-black px-4 py-1 rounded-full text-sm sm:text-base shadow';
+                label.textContent = `✅ ${selectedCountry.name}`;
+                cardEl.appendChild(label);
+
+                const msg = `Жарайсың! Бұл — ${selectedCountry.name}!`;
+                feedback.innerHTML = `<span class="text-emerald-600 font-black text-base sm:text-lg">🎉 ${msg}</span>`;
+                speakKazakh(msg);
+
+                setTimeout(nextFlagQuestion, 4500);
+            } else {
+                playToneEffect('error');
+                cardEl.classList.remove('animate-shake');
+                void cardEl.offsetWidth;
+                cardEl.classList.add('animate-shake', 'border-rose-400', 'bg-rose-50');
+
+                const msg = `Бұл — ${selectedCountry.name}. Қайта көрейік!`;
+                feedback.innerHTML = `<span class="text-rose-600 font-extrabold text-sm sm:text-base">🤔 ${msg}</span>`;
+                speakKazakh(msg);
+
+                setTimeout(() => {
+                    cardEl.classList.remove('border-rose-400', 'bg-rose-50');
+                }, 900);
+            }
+        }
+
+        // ================= 2-РЕЖИМ: ҮЛКЕН ТҮРЛІ-ТҮСТІ КАРТА =================
+        async function startMapGame() {
+            playToneEffect('pop');
+            showScreen('screen-map-game');
+
+            if (!mapInitialized) {
+                await initWorldMap();
+            }
+            nextMapQuestion();
+        }
+
+        async function initWorldMap() {
+            const loader = document.getElementById('map-loader');
+            loader.classList.remove('hidden');
+
+            try {
+                const containerEl = document.getElementById('map-container');
+                const rect = containerEl.getBoundingClientRect();
+                mapWidth = Math.max(rect.width || 1000, 700);
+                mapHeight = Math.max(rect.height || 620, 480);
+
+                mapSvg = d3.select('#world-map-svg')
+                    .attr('viewBox', `0 0 ${mapWidth} ${mapHeight}`)
+                    .attr('preserveAspectRatio', 'xMidYMid slice');
+
+                mapSvg.selectAll('*').remove();
+
+                mapProjection = d3.geoNaturalEarth1()
+                    .scale(mapWidth / 4.8)
+                    .translate([mapWidth / 2, mapHeight / 1.85]);
+
+                mapPath = d3.geoPath().projection(mapProjection);
+
+                mapG = mapSvg.append('g').attr('id', 'map-layers');
+
+                mapZoom = d3.zoom()
+                    .scaleExtent([0.9, 18])
+                    .on('zoom', (event) => {
+                        mapG.attr('transform', event.transform);
+                        const k = event.transform.k;
+                        mapG.selectAll('.country-path').style('stroke-width', `${0.65 / Math.sqrt(k)}px`);
+                        mapG.selectAll('.small-hotspot-circle').attr('r', Math.max(4, 13 / Math.sqrt(k)));
+                    });
+
+                mapSvg.call(mapZoom);
+
+                const response = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json');
+                const worldData = await response.json();
+
+                const allFeatures = topojson.feature(worldData, worldData.objects.countries).features
+                    .filter(f => String(f.id) !== '010');
+
+                mapG.selectAll('path.country-path')
+                    .data(allFeatures)
+                    .enter()
+                    .append('path')
+                    .attr('d', mapPath)
+                    .attr('id', d => `country-poly-${String(d.id).padStart(3, '0')}`)
+                    .attr('class', d => {
+                        const c = COUNTRY_BY_NUM[String(d.id)];
+                        return c ? 'country-path country-playable' : 'country-path country-nonplayable';
+                    })
+                    .style('fill', d => {
+                        const c = COUNTRY_BY_NUM[String(d.id)];
+                        return c ? c.color : null;
+                    })
+                    .on('click', function(event, d) {
+                        if (event.defaultPrevented) return;
+                        event.stopPropagation();
+                        const c = COUNTRY_BY_NUM[String(d.id)];
+                        if (c) {
+                            handleMapCountryClick(c, this);
+                        } else {
+                            playToneEffect('pop');
+                            document.getElementById('map-feedback').innerHTML =
+                                `<span class="text-slate-600">Түрлі-түсті елдерді таңда 🌍</span>`;
+                        }
+                    });
+
+                const smallCountries = COUNTRIES.filter(c => c.smallHotspot);
+                const hotspots = mapG.selectAll('g.hotspot-group')
+                    .data(smallCountries)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'hotspot-group cursor-pointer')
+                    .attr('transform', d => {
+                        const [x, y] = mapProjection(d.coords);
+                        return `translate(${x}, ${y})`;
+                    })
+                    .on('click', function(event, d) {
+                        if (event.defaultPrevented) return;
+                        event.stopPropagation();
+                        const poly = document.getElementById(`country-poly-${d.num}`);
+                        handleMapCountryClick(d, poly || this);
+                    });
+
+                hotspots.append('circle')
+                    .attr('class', 'small-hotspot-circle')
+                    .attr('r', 13)
+                    .attr('fill', d => d.color)
+                    .attr('fill-opacity', 0.65)
+                    .attr('stroke', '#1e293b')
+                    .attr('stroke-width', 1.5);
+
+                hotspots.append('circle')
+                    .attr('r', 3.5)
+                    .attr('fill', '#dc2626');
+
+                mapInitialized = true;
+            } catch (err) {
+                loader.innerHTML = `
+                    <div class="text-4xl mb-2">⚠️</div>
+                    <p class="font-black text-rose-700">Картаны жүктеу мүмкін болмады</p>
+                    <p class="text-xs font-bold text-slate-600 mt-1">Интернет байланысын тексеріп, қайта көріңіз</p>
+                    <button onclick="initWorldMap()" class="mt-3 bg-sky-500 text-white font-bold px-4 py-2 rounded-xl">Қайта жүктеу</button>
+                `;
+                return;
+            }
+
+            loader.classList.add('hidden');
+        }
+
+        function zoomMapBy(factor) {
+            if (!mapSvg || !mapZoom) return;
+            playToneEffect('pop');
+            mapSvg.transition().duration(280).call(mapZoom.scaleBy, factor);
+        }
+
+        function resetMapZoom() {
+            if (!mapSvg || !mapZoom) return;
+            playToneEffect('pop');
+            mapSvg.transition().duration(450).call(mapZoom.transform, d3.zoomIdentity);
+        }
+
+        function repeatMapPrompt() {
+            if (!currentMapTarget) return;
+            speakKazakh(`${currentMapTarget.accusative} картадан тап!`);
+        }
+
+        function nextMapQuestion() {
+            document.getElementById('map-success-overlay').classList.add('hidden');
+
+            if (mapG) {
+                mapG.selectAll('.country-path')
+                    .classed('country-found', false)
+                    .classed('country-hint', false);
+            }
+
+            let candidates = COUNTRIES.filter(c => c.id !== lastMapId);
+            currentMapTarget = candidates[Math.floor(Math.random() * candidates.length)];
+            lastMapId = currentMapTarget.id;
+
+            const promptText = `${currentMapTarget.accusative} картадан тап!`;
+            document.getElementById('map-prompt-text').textContent = promptText;
+            document.getElementById('map-feedback').innerHTML = `<span class="text-slate-500">Мемлекетті бас 👆</span>`;
+
+            speakKazakh(promptText);
+        }
+
+        function handleMapCountryClick(clickedCountry, element) {
+            if (!currentMapTarget) return;
+            const feedbackEl = document.getElementById('map-feedback');
+
+            if (clickedCountry.id === currentMapTarget.id) {
+                addStar(2);
+                playToneEffect('success');
+                spawnConfetti();
+
+                if (mapG) mapG.selectAll('.country-hint').classed('country-hint', false);
+                if (element) d3.select(element).classed('country-found', true);
+
+                const msg = `Жарайсың! Бұл — ${clickedCountry.name}!`;
+                speakKazakh(msg);
+
+                const flagImg = document.getElementById('map-success-flag');
+                flagImg.src = getFlagUrl(clickedCountry.iso2);
+                flagImg.onerror = function() {
+                    this.onerror = null;
+                    this.src = getFallbackFlagSvg(clickedCountry);
+                };
+
+                document.getElementById('map-success-title').textContent = 'Жарайсың! ⭐ +2';
+                document.getElementById('map-success-desc').textContent = `Бұл — ${clickedCountry.name}!`;
+                document.getElementById('map-success-overlay').classList.remove('hidden');
+            } else {
+                playToneEffect('error');
+                const msg = `Бұл — ${clickedCountry.name}. Қайта көрейік!`;
+                feedbackEl.innerHTML = `<span class="text-rose-600">❌ Бұл — ${clickedCountry.name}</span>`;
+                speakKazakh(msg);
+
+                if (element && element.tagName === 'path') {
+                    const sel = d3.select(element);
+                    sel.style('fill', '#ef4444');
+                    setTimeout(() => sel.style('fill', clickedCountry.color), 3500);
+                }
+            }
+        }
+
+        function showMapHint() {
+            if (!currentMapTarget || !mapSvg || !mapProjection) return;
+            playToneEffect('pop');
+
+            const poly = document.getElementById(`country-poly-${currentMapTarget.num}`);
+            if (poly) d3.select(poly).classed('country-hint', true);
+
+            const [x, y] = mapProjection(currentMapTarget.coords);
+            const scale = currentMapTarget.smallHotspot ? 6.5 : 3.5;
+            const translateX = mapWidth / 2 - scale * x;
+            const translateY = mapHeight / 2 - scale * y;
+
+            mapSvg.transition()
+                .duration(750)
+                .call(mapZoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
+
+            const hintMsg = `Міне, ${currentMapTarget.name} осы жерде!`;
+            document.getElementById('map-feedback').innerHTML = `<span class="text-amber-700">💡 ${hintMsg}</span>`;
+            speakKazakh(hintMsg);
+        }
+
+        // ================= АТЛАС =================
+        function openAtlas() {
+            playToneEffect('pop');
+            showScreen('screen-atlas');
+            document.getElementById('atlas-search').value = '';
+            renderAtlas();
+        }
+
+        function renderAtlas() {
+            const query = document.getElementById('atlas-search').value.trim().toLowerCase();
+            const grid = document.getElementById('atlas-grid');
+            grid.innerHTML = '';
+
+            const filtered = COUNTRIES.filter(c => c.name.toLowerCase().includes(query));
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500 font-bold">Мұндай мемлекет табылмады 🤷‍♂️</div>`;
+                return;
+            }
+
+            filtered.forEach(country => {
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'btn-3d bg-white hover:bg-amber-50 rounded-3xl p-3 shadow-md border-4 border-slate-100 hover:border-amber-300 flex flex-col items-center text-center transition-all';
+                card.onclick = () => {
+                    playToneEffect('pop');
+                    speakKazakh(country.name);
+                    card.classList.remove('animate-pop');
+                    void card.offsetWidth;
+                    card.classList.add('animate-pop');
+                };
+
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'w-full aspect-[3/2] rounded-2xl overflow-hidden border border-slate-200 shadow-xs mb-2.5 bg-slate-100';
+
+                const img = document.createElement('img');
+                img.src = getFlagUrl(country.iso2);
+                img.alt = country.name;
+                img.loading = 'lazy';
+                img.className = 'w-full h-full object-cover';
+                img.onerror = function() {
+                    this.onerror = null;
+                    this.src = getFallbackFlagSvg(country);
+                };
+
+                imgWrap.appendChild(img);
+
+                const titleRow = document.createElement('div');
+                titleRow.className = 'flex items-center justify-center gap-1.5 w-full';
+                titleRow.innerHTML = `
+                    <span class="font-black text-slate-800 text-sm sm:text-base leading-tight">${country.name}</span>
+                    <span class="text-sky-500 text-sm">🔊</span>
+                `;
+
+                card.appendChild(imgWrap);
+                card.appendChild(titleRow);
+                grid.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

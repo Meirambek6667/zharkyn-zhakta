@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>СЕРГІТУ СӘТІ — Балаларға арналған музыка және қозғалыс ойыны</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Nunito & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* Балаларға арналған ашық әрі көңілді фон */
+        body {
+            font-family: 'Nunito', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fffbeb 0%, #e0f2fe 50%, #fce7f3 100%);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        /* Ірі 3D батырмалардың басу әсері */
+        .btn-kid {
+            transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease, background-color 0.15s ease;
+        }
+        .btn-kid:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16) !important;
+        }
+
+        /* Жұмсақ қалқу анимациясы */
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: gentleFloat 2.8s ease-in-out infinite;
+        }
+
+        /* Белсенді ойын/қозғалыс тапсырмасының айналасындағы шеңбер */
+        @keyframes activeGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+            50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        }
+        .active-game-glow {
+            animation: activeGlow 1.9s infinite;
+        }
+
+        /* Слайдерлер */
+        input[type="range"].kid-slider {
+            accent-color: #0284c7;
+            height: 10px;
+            border-radius: 9999px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- ================= ЖОҒАРҒЫ ТАҚЫРЫП ЖӘНЕ ОЙЫН БАСҚАРУЫ ================= -->
+    <header class="bg-white/95 backdrop-blur-md border-b-4 border-amber-300 shadow-sm sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-3 py-3 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3 text-center md:text-left">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 text-white flex items-center justify-center text-2xl sm:text-3xl shadow-md border-b-4 border-orange-600 shrink-0 animate-float">
+                    🎉
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+                        СЕРГІТУ СӘТІ
+                    </h1>
+                    <p class="text-xs sm:text-sm font-extrabold text-sky-700">
+                        Көңілді музыка және қозғалыс ойыны
+                    </p>
+                </div>
+            </div>
+
+            <!-- Ойын ұпайы / орындалған тапсырмалар -->
+            <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
+                <div class="bg-amber-100 text-amber-950 border-2 border-amber-300 px-4 py-2 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-1.5">
+                    <span>⭐</span>
+                    <span>Тапсырма:</span>
+                    <span id="completed-count">0 / 8</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= НЕГІЗГІ АЙМАҚ ================= -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-3 py-5 sm:px-6 sm:py-7 flex flex-col gap-7">
+
+        <!-- ================= 1. ҚОЗҒАЛЫС ОЙЫНЫ / ТАПСЫРМАЛАРЫ ================= -->
+        <section aria-labelledby="game-heading" class="bg-white/95 rounded-3xl p-4 sm:p-6 shadow-xl border-4 border-emerald-200 flex flex-col gap-5">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b-2 border-emerald-100 pb-4">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-900 font-black text-xs px-3 py-1 rounded-full mb-1.5">
+                        <span>🎮</span>
+                        <span>ҚОЗҒАЛЫС ОЙЫНЫ</span>
+                    </div>
+                    <h2 id="game-heading" class="text-xl sm:text-2xl font-black text-slate-900">
+                        Қозғалыс тапсырмалары
+                    </h2>
+                    <p class="text-xs sm:text-sm font-bold text-slate-600 mt-0.5">
+                        Тапсырманы таңдап, қозғалысты орында, таймерді қос және «Орындалды» батырмасын бас!
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" onclick="nextMovement()" class="btn-kid bg-emerald-500 hover:bg-emerald-600 text-white font-black px-4 py-3 rounded-2xl border-b-4 border-emerald-700 text-sm flex items-center gap-1.5 shadow cursor-pointer">
+                        <span>Келесі қозғалыс</span>
+                        <span>➡️</span>
+                    </button>
+                    <button type="button" onclick="resetMovements()" class="btn-kid bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold px-3.5 py-3 rounded-2xl border-b-4 border-slate-300 text-xs sm:text-sm cursor-pointer">
+                        <span>↺ Қайта бастау</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Белсенді ойын тапсырмасының үлкен карточкасы -->
+            <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border-2 border-emerald-300 rounded-3xl p-4 sm:p-5 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                <div class="flex items-start sm:items-center gap-3.5">
+                    <div id="current-movement-emoji" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border-2 border-emerald-200 shadow-sm flex items-center justify-center text-3xl sm:text-4xl shrink-0">
+                        🦵
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <span id="current-movement-step" class="text-xs font-black bg-emerald-200 text-emerald-950 px-2.5 py-0.5 rounded-full">
+                                1-тапсырма
+                            </span>
+                            <span id="current-movement-status" class="text-xs font-black bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full">
+                                Кезектегі қозғалыс
+                            </span>
+                        </div>
+                        <h3 id="current-movement-title" class="text-xl sm:text-2xl font-black text-slate-900">
+                            5 рет отырып-тұру.
+                        </h3>
+                        <p id="current-movement-desc" class="text-xs sm:text-sm font-bold text-slate-600 mt-0.5">
+                            Аяқты сәл алшақ қойып, қолды алға созып, 1-ден 5-ке дейін санап отырып-тұрайық.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Оң жақ: Таймер және «Орындалды» батырмасы -->
+                <div class="flex flex-wrap items-center justify-between sm:justify-end gap-3 bg-white/90 rounded-2xl p-3 border-2 border-emerald-200 shrink-0">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-amber-100 border-2 border-amber-300 rounded-2xl px-3.5 py-2 text-center min-w-[84px]">
+                            <div class="text-[10px] font-black uppercase text-amber-800">Таймер</div>
+                            <div id="timer-display" class="text-xl sm:text-2xl font-black text-amber-950 tabular-nums leading-tight">
+                                10 с
+                            </div>
+                        </div>
+                        <button id="btn-timer-toggle" type="button" onclick="toggleTimer()" class="btn-kid bg-amber-400 hover:bg-amber-500 text-amber-950 font-black px-4 py-3 rounded-2xl border-b-4 border-amber-600 text-xs sm:text-sm cursor-pointer">
+                            ▶️ Таймерді қосу
+                        </button>
+                        <button type="button" onclick="resetTimer()" class="btn-kid bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold px-3 py-3 rounded-2xl border-b-4 border-slate-300 text-xs sm:text-sm cursor-pointer" title="Таймерді бастапқы мәнге қайтару">
+                            ↺
+                        </button>
+                    </div>
+
+                    <button id="btn-mark-done" type="button" onclick="toggleCurrentMovementDone()" class="btn-kid bg-emerald-500 hover:bg-emerald-600 text-white font-black px-5 py-3 rounded-2xl border-b-4 border-emerald-700 text-sm flex items-center gap-1.5 shadow cursor-pointer">
+                        <span>✓</span>
+                        <span id="btn-mark-done-text">Орындалды</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 8 ҚОЗҒАЛЫС ТАПСЫРМАСЫНЫҢ КАРТОЧКАЛАРЫ -->
+            <div id="movements-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+                <!-- JS арқылы 8 қозғалыс тапсырмасы жасалады -->
+            </div>
+        </section>
+
+        <!-- ================= 2. ӘНДЕР ТІЗІМІ (ҚОСЫМША ІШІНДЕГІ HTML5 <audio> ОЙНАТҚЫШЫ) ================= -->
+        <section aria-labelledby="songs-heading" class="bg-white/95 rounded-3xl p-4 sm:p-6 shadow-xl border-4 border-sky-200 flex flex-col gap-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-sky-100 pb-4">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 bg-sky-100 text-sky-900 font-black text-xs px-3 py-1 rounded-full mb-1.5">
+                        <span>🎵</span>
+                        <span>ҚОСЫМША ІШІНДЕГІ МУЗЫКА</span>
+                    </div>
+                    <h2 id="songs-heading" class="text-xl sm:text-2xl font-black text-slate-900">
+                        Әндер тізімі
+                    </h2>
+                    <p class="text-xs sm:text-sm font-bold text-slate-600 mt-0.5">
+                        Ұнаған әннің «Ойнату» батырмасын басып, бірге билеңіз!
+                    </p>
+                </div>
+
+                <button type="button" onclick="stopAudio()" class="btn-kid bg-rose-500 hover:bg-rose-600 text-white font-black px-5 py-3 rounded-2xl border-b-4 border-rose-700 text-sm flex items-center justify-center gap-2 shadow cursor-pointer shrink-0">
+                    <span>⏹️</span>
+                    <span>Тоқтату</span>
+                </button>
+            </div>
+
+            <!-- Ортақ ойнатқыш күйі және басқару жолағы -->
+            <div class="bg-gradient-to-r from-sky-50 via-indigo-50 to-amber-50 border-2 border-sky-200 rounded-3xl p-4 flex flex-col gap-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <span id="player-badge" class="px-3 py-1 rounded-full text-xs font-black bg-slate-200 text-slate-700">
+                            Күтуде
+                        </span>
+                        <h3 id="player-title" class="text-base sm:text-lg font-black text-slate-900">
+                            Ән таңдалмаған
+                        </h3>
+                    </div>
+                    <span id="player-time" class="text-xs sm:text-sm font-black text-slate-600 tabular-nums hidden">
+                        00:00 / 00:00
+                    </span>
+                </div>
+
+                <div id="player-progress-wrap" class="hidden items-center gap-3">
+                    <input id="player-progress" type="range" min="0" max="100" value="0" step="0.1" oninput="seekTrack(this.value)" class="kid-slider w-full">
+                </div>
+
+                <div class="flex items-center justify-between gap-3 text-xs font-extrabold text-slate-600">
+                    <div class="flex items-center gap-2 w-full max-w-xs">
+                        <span>🔈</span>
+                        <input id="player-volume" type="range" min="0" max="1" value="0.85" step="0.05" oninput="changeVolume(this.value)" aria-label="Дыбыс қаттылығы" class="kid-slider w-full">
+                        <span>🔊</span>
+                    </div>
+                    <span id="player-source-info" class="text-slate-500 text-right">
+                        Әннен «Ойнату» батырмасын бас
+                    </span>
+                </div>
+            </div>
+
+            <!-- 6 ӘННІҢ ТІЗІМІ -->
+            <div id="songs-container" class="grid grid-cols-1 gap-3">
+                <!-- JS арқылы 6 ән жолы жасалады -->
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ============================================================================
+        // 1. ҚОЗҒАЛЫС ТАПСЫРМАЛАРЫ (ОЙЫН / ТАПСЫРМА)
+        // ============================================================================
+        const MOVEMENTS = [
+            {
+                id: 1,
+                title: "5 рет отырып-тұру.",
+                emoji: "🦵",
+                seconds: 10,
+                desc: "Аяқты сәл алшақ қойып, қолды алға созып, 1-ден 5-ке дейін санап отырып-тұрайық."
+            },
+            {
+                id: 2,
+                title: "5 рет секіру.",
+                emoji: "🦘",
+                seconds: 10,
+                desc: "Қос аяқпен жеңіл әрі көңілді 5 рет жоғары секірейік."
+            },
+            {
+                id: 3,
+                title: "Қолды 5 рет жоғары көтеру.",
+                emoji: "🙌",
+                seconds: 10,
+                desc: "Екі қолды жоғары созып көтерейік және төмен түсірейік — 5 рет."
+            },
+            {
+                id: 4,
+                title: "Оңға және солға бұрылу.",
+                emoji: "↔️",
+                seconds: 10,
+                desc: "Белді түзу ұстап, алдымен оңға, сосын солға баяу бұрылайық."
+            },
+            {
+                id: 5,
+                title: "Бір орында 10 секунд жүгіру.",
+                emoji: "🏃",
+                seconds: 10,
+                desc: "Таймерді қосып, бір орында 10 секунд көңілді жүгірейік!"
+            },
+            {
+                id: 6,
+                title: "Қол шапалақтау.",
+                emoji: "👏",
+                seconds: 8,
+                desc: "Әуенге қосылып, шапалақ соғып сергиік."
+            },
+            {
+                id: 7,
+                title: "Би билеу.",
+                emoji: "💃",
+                seconds: 15,
+                desc: "Еркін қозғалып, көңілді би билейік!"
+            },
+            {
+                id: 8,
+                title: "Терең тыныс алу.",
+                emoji: "🌬️",
+                seconds: 12,
+                desc: "Мұрынмен терең тыныс алып, ауызбен жайлап дем шығарайық."
+            }
+        ];
+
+        let activeMovementIdx = 0;
+        const completedSet = new Set();
+
+        let timerInterval = null;
+        let remainingSeconds = MOVEMENTS[0].seconds;
+        let timerRunning = false;
+
+        function clearTimerInterval() {
+            if (timerInterval !== null) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            timerRunning = false;
+        }
+
+        function updateTimerUI() {
+            const display = document.getElementById("timer-display");
+            const btn = document.getElementById("btn-timer-toggle");
+            display.textContent = `${remainingSeconds} с`;
+
+            if (timerRunning) {
+                btn.innerHTML = `<span>⏸️</span><span>Кідірту</span>`;
+                btn.className = "btn-kid bg-orange-400 hover:bg-orange-500 text-orange-950 font-black px-4 py-3 rounded-2xl border-b-4 border-orange-600 text-xs sm:text-sm cursor-pointer";
+            } else {
+                btn.innerHTML = `<span>▶️</span><span>Таймерді қосу</span>`;
+                btn.className = "btn-kid bg-amber-400 hover:bg-amber-500 text-amber-950 font-black px-4 py-3 rounded-2xl border-b-4 border-amber-600 text-xs sm:text-sm cursor-pointer";
+            }
+        }
+
+        function resetTimer() {
+            clearTimerInterval();
+            remainingSeconds = MOVEMENTS[activeMovementIdx].seconds;
+            updateTimerUI();
+        }
+
+        function toggleTimer() {
+            if (timerRunning) {
+                clearTimerInterval();
+                updateTimerUI();
+                return;
+            }
+
+            if (remainingSeconds <= 0) {
+                remainingSeconds = MOVEMENTS[activeMovementIdx].seconds;
+            }
+
+            timerRunning = true;
+            updateTimerUI();
+
+            timerInterval = setInterval(() => {
+                remainingSeconds -= 1;
+                if (remainingSeconds <= 0) {
+                    remainingSeconds = 0;
+                    clearTimerInterval();
+                    completedSet.add(MOVEMENTS[activeMovementIdx].id);
+                    renderMovements();
+                    updateActiveMovementUI();
+                }
+                updateTimerUI();
+            }, 1000);
+        }
+
+        function selectMovement(idx) {
+            if (idx < 0 || idx >= MOVEMENTS.length) return;
+            clearTimerInterval();
+            activeMovementIdx = idx;
+            remainingSeconds = MOVEMENTS[idx].seconds;
+            updateActiveMovementUI();
+            updateTimerUI();
+            renderMovements();
+        }
+
+        function nextMovement() {
+            const nextIdx = (activeMovementIdx + 1) % MOVEMENTS.length;
+            selectMovement(nextIdx);
+        }
+
+        function toggleCurrentMovementDone() {
+            const mv = MOVEMENTS[activeMovementIdx];
+            if (!mv) return;
+            if (completedSet.has(mv.id)) {
+                completedSet.delete(mv.id);
+            } else {
+                completedSet.add(mv.id);
+            }
+            updateActiveMovementUI();
+            renderMovements();
+        }
+
+        function resetMovements() {
+            clearTimerInterval();
+            completedSet.clear();
+            activeMovementIdx = 0;
+            remainingSeconds = MOVEMENTS[0].seconds;
+            updateActiveMovementUI();
+            updateTimerUI();
+            renderMovements();
+        }
+
+        function updateActiveMovementUI() {
+            const mv = MOVEMENTS[activeMovementIdx];
+            const isDone = completedSet.has(mv.id);
+
+            document.getElementById("current-movement-emoji").textContent = mv.emoji;
+            document.getElementById("current-movement-step").textContent = `${mv.id}-тапсырма`;
+            document.getElementById("current-movement-title").textContent = mv.title;
+            document.getElementById("current-movement-desc").textContent = mv.desc;
+            document.getElementById("completed-count").textContent = `${completedSet.size} / ${MOVEMENTS.length}`;
+
+            const statusBadge = document.getElementById("current-movement-status");
+            const doneBtn = document.getElementById("btn-mark-done");
+            const doneText = document.getElementById("btn-mark-done-text");
+
+            if (isDone) {
+                statusBadge.className = "text-xs font-black bg-emerald-500 text-white px-2.5 py-0.5 rounded-full";
+                statusBadge.textContent = "✓ Орындалды";
+                doneBtn.className = "btn-kid bg-teal-600 hover:bg-teal-700 text-white font-black px-5 py-3 rounded-2xl border-b-4 border-teal-800 text-sm flex items-center gap-1.5 shadow cursor-pointer";
+                doneText.textContent = "Орындалды ✓";
+            } else {
+                statusBadge.className = "text-xs font-black bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full";
+                statusBadge.textContent = "Кезектегі қозғалыс";
+                doneBtn.className = "btn-kid bg-emerald-500 hover:bg-emerald-600 text-white font-black px-5 py-3 rounded-2xl border-b-4 border-emerald-700 text-sm flex items-center gap-1.5 shadow cursor-pointer";
+                doneText.textContent = "Орындалды";
+            }
+        }
+
+        function renderMovements() {
+            const container = document.getElementById("movements-container");
+            container.innerHTML = "";
+
+            MOVEMENTS.forEach((mv, idx) => {
+                const isActive = idx === activeMovementIdx;
+                const isDone = completedSet.has(mv.id);
+
+                const card = document.createElement("button");
+                card.type = "button";
+                card.className = [
+                    "text-left rounded-3xl p-4 border-2 transition-all cursor-pointer flex flex-col justify-between gap-2.5 shadow-2xs",
+                    isActive
+                        ? "bg-emerald-50 border-emerald-500 ring-2 ring-emerald-300 active-game-glow"
+                        : isDone
+                        ? "bg-teal-50/70 border-teal-300 hover:border-teal-400"
+                        : "bg-white border-slate-200 hover:border-sky-300"
+                ].join(" ");
+                card.onclick = () => selectMovement(idx);
+
+                const top = document.createElement("div");
+                top.className = "flex items-center justify-between gap-2 w-full";
+
+                const icon = document.createElement("span");
+                icon.className = "w-11 h-11 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-2xl shrink-0";
+                icon.textContent = mv.emoji;
+
+                const pill = document.createElement("span");
+                if (isDone) {
+                    pill.className = "px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-500 text-white";
+                    pill.textContent = "✓ Орындалды";
+                } else if (isActive) {
+                    pill.className = "px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-300 text-amber-950";
+                    pill.textContent = "Белсенді";
+                } else {
+                    pill.className = "px-2.5 py-1 rounded-full text-[11px] font-black bg-slate-100 text-slate-600";
+                    pill.textContent = `${mv.seconds} с`;
+                }
+
+                top.appendChild(icon);
+                top.appendChild(pill);
+
+                const title = document.createElement("div");
+                title.className = "text-base sm:text-lg font-black text-slate-900 leading-snug";
+                title.textContent = mv.title;
+
+                const desc = document.createElement("div");
+                desc.className = "text-xs font-bold text-slate-600";
+                desc.textContent = mv.desc;
+
+                card.appendChild(top);
+                card.appendChild(title);
+                card.appendChild(desc);
+                container.appendChild(card);
+            });
+
+            document.getElementById("completed-count").textContent = `${completedSet.size} / ${MOVEMENTS.length}`;
+        }
+
+        // ============================================================================
+        // 2. ӘНДЕР ТІЗІМІ ЖӘНЕ ҚОСЫМША ІШІНДЕГІ HTML5 <audio> ОЙНАТҚЫШЫ
+        // ============================================================================
+        const AUDIO_BASE_DIR = "audio";
+
+        const SONGS = [
+            {
+                id: 1,
+                title: "Baby Shark",
+                fileName: "baby-shark.mp3",
+                emoji: "🦈",
+                theme: "from-sky-50 to-cyan-50 border-sky-200"
+            },
+            {
+                id: 2,
+                title: "Қошақаным",
+                fileName: "Айнель Сапарғали - Қошақаным қайда екен.mp3",
+                emoji: "🐑",
+                theme: "from-amber-50 to-yellow-50 border-amber-200"
+            },
+            {
+                id: 3,
+                title: "Мамасының жүрегі",
+                fileName: "Bykhin_Mamasynyn_zuregi.mp3",
+                emoji: "💖",
+                theme: "from-pink-50 to-rose-50 border-pink-200"
+            },
+            {
+                id: 4,
+                title: "Балқия",
+                fileName: "balija-2023.mp3",
+                emoji: "💃",
+                theme: "from-emerald-50 to-teal-50 border-emerald-200"
+            },
+            {
+                id: 5,
+                title: "Кока-Кола, Пепси",
+                fileName: "Қайрат Керімбек - Koka-kola Пепси.mp3",
+                emoji: "🥤",
+                theme: "from-orange-50 to-amber-50 border-orange-200"
+            },
+            {
+                id: 6,
+                title: "Қанша гүлдер",
+                fileName: "Adilet Zhaugashar & Алишер Байниязов - Kansha gulder.mp3",
+                emoji: "🌸",
+                theme: "from-fuchsia-50 to-purple-50 border-fuchsia-200"
+            }
+        ];
+
+        const songState = SONGS.map((s) => ({
+            id: s.id,
+            src: `${AUDIO_BASE_DIR}/${encodeURIComponent(s.fileName)}`,
+            hasError: false,
+            hasData: false
+        }));
+
+        const audioPlayer = new Audio();
+        audioPlayer.preload = "auto";
+        audioPlayer.volume = 0.85;
+
+        let activeSongIdx = null;
+        let isDraggingProgress = false;
+
+        function isActuallyPlaying() {
+            return (
+                activeSongIdx !== null &&
+                !audioPlayer.paused &&
+                !audioPlayer.ended &&
+                audioPlayer.readyState >= 2 &&
+                !songState[activeSongIdx].hasError
+            );
+        }
+
+        function formatTime(sec) {
+            if (!Number.isFinite(sec) || sec < 0) return "00:00";
+            const s = Math.floor(sec);
+            const m = Math.floor(s / 60);
+            const r = s % 60;
+            return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+        }
+
+        function syncAudioUI() {
+            const badge = document.getElementById("player-badge");
+            const titleEl = document.getElementById("player-title");
+            const timeEl = document.getElementById("player-time");
+            const progressWrap = document.getElementById("player-progress-wrap");
+            const progressSlider = document.getElementById("player-progress");
+            const sourceInfo = document.getElementById("player-source-info");
+
+            if (activeSongIdx === null) {
+                badge.className = "px-3 py-1 rounded-full text-xs font-black bg-slate-200 text-slate-700";
+                badge.textContent = "Күтуде";
+                titleEl.textContent = "Ән таңдалмаған";
+                timeEl.classList.add("hidden");
+                progressWrap.classList.add("hidden");
+                progressWrap.classList.remove("flex");
+                sourceInfo.textContent = "Әннен «Ойнату» батырмасын бас";
+            } else {
+                const song = SONGS[activeSongIdx];
+                const st = songState[activeSongIdx];
+                titleEl.textContent = `${song.emoji} ${song.id}. ${song.title}`;
+
+                if (isActuallyPlaying()) {
+                    badge.className = "px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-white";
+                    badge.textContent = "Ойнап тұр";
+                } else if (audioPlayer.paused && st.hasData && !st.hasError) {
+                    badge.className = "px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300";
+                    badge.textContent = "Кідіртілді";
+                } else if (st.hasError) {
+                    badge.className = "px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300";
+                    badge.textContent = "Файл ашылмады";
+                } else {
+                    badge.className = "px-3 py-1 rounded-full text-xs font-black bg-sky-100 text-sky-900 border border-sky-300";
+                    badge.textContent = "Жүктелуде";
+                }
+
+                const validDur = !st.hasError && Number.isFinite(audioPlayer.duration) && audioPlayer.duration > 0;
+                if (validDur) {
+                    timeEl.classList.remove("hidden");
+                    timeEl.textContent = `${formatTime(audioPlayer.currentTime)} / ${formatTime(audioPlayer.duration)}`;
+                    progressWrap.classList.remove("hidden");
+                    progressWrap.classList.add("flex");
+                    if (!isDraggingProgress) {
+                        progressSlider.value = String((audioPlayer.currentTime / audioPlayer.duration) * 100);
+                    }
+                } else {
+                    timeEl.classList.add("hidden");
+                    progressWrap.classList.add("hidden");
+                    progressWrap.classList.remove("flex");
+                }
+
+                sourceInfo.textContent = song.fileName;
+            }
+
+            SONGS.forEach((song, idx) => {
+                const st = songState[idx];
+                const card = document.getElementById(`song-row-${song.id}`);
+                const statusEl = document.getElementById(`song-badge-${song.id}`);
+                const playBtn = document.getElementById(`song-btn-${song.id}`);
+
+                const isSelected = activeSongIdx === idx;
+                const isPlayingNow = isSelected && isActuallyPlaying();
+
+                if (card) {
+                    if (isPlayingNow) {
+                        card.classList.add("ring-4", "ring-emerald-400");
+                    } else {
+                        card.classList.remove("ring-4", "ring-emerald-400");
+                    }
+                }
+
+                if (statusEl) {
+                    if (isPlayingNow) {
+                        statusEl.className = "px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-white";
+                        statusEl.textContent = "Ойнап тұр";
+                    } else if (isSelected && audioPlayer.paused && st.hasData && !st.hasError) {
+                        statusEl.className = "px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300";
+                        statusEl.textContent = "Кідіртілді";
+                    } else if (isSelected && st.hasError) {
+                        statusEl.className = "px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300";
+                        statusEl.textContent = "Файл табылмады";
+                    } else {
+                        statusEl.className = "px-3 py-1 rounded-full text-xs font-black bg-white/90 text-slate-700 border border-slate-200";
+                        statusEl.textContent = "Дайын";
+                    }
+                }
+
+                if (playBtn) {
+                    if (isPlayingNow) {
+                        playBtn.className = "btn-kid bg-amber-400 hover:bg-amber-500 text-amber-950 font-black px-6 py-3 rounded-2xl border-b-4 border-amber-600 text-sm flex items-center justify-center gap-1.5 shadow cursor-pointer";
+                        playBtn.innerHTML = `<span>⏸️</span><span>Кідірту</span>`;
+                    } else {
+                        playBtn.className = "btn-kid bg-emerald-500 hover:bg-emerald-600 text-white font-black px-6 py-3 rounded-2xl border-b-4 border-emerald-700 text-sm flex items-center justify-center gap-1.5 shadow cursor-pointer";
+                        playBtn.innerHTML = `<span>▶️</span><span>Ойнату</span>`;
+                    }
+                }
+            });
+        }
+
+        function renderSongs() {
+            const container = document.getElementById("songs-container");
+            container.innerHTML = "";
+
+            SONGS.forEach((song, idx) => {
+                const row = document.createElement("div");
+                row.id = `song-row-${song.id}`;
+                row.className = `bg-gradient-to-r ${song.theme} border-2 rounded-3xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all`;
+
+                const left = document.createElement("div");
+                left.className = "flex items-center gap-3 min-w-0";
+
+                const icon = document.createElement("div");
+                icon.className = "w-12 h-12 rounded-2xl bg-white border-2 border-white/80 shadow-xs flex items-center justify-center text-2xl sm:text-3xl shrink-0";
+                icon.textContent = song.emoji;
+
+                const meta = document.createElement("div");
+                meta.className = "min-w-0";
+
+                const titleRow = document.createElement("div");
+                titleRow.className = "flex items-center gap-2 flex-wrap";
+
+                const nameEl = document.createElement("span");
+                nameEl.className = "text-base sm:text-lg font-black text-slate-900 truncate";
+                nameEl.textContent = `${song.id}. ${song.title}`;
+
+                const badgeEl = document.createElement("span");
+                badgeEl.id = `song-badge-${song.id}`;
+                badgeEl.className = "px-3 py-1 rounded-full text-xs font-black bg-white/90 text-slate-700 border border-slate-200";
+                badgeEl.textContent = "Дайын";
+
+                titleRow.appendChild(nameEl);
+                titleRow.appendChild(badgeEl);
+
+                meta.appendChild(titleRow);
+                left.appendChild(icon);
+                left.appendChild(meta);
+
+                const right = document.createElement("div");
+                right.className = "flex items-center shrink-0";
+
+                const playBtn = document.createElement("button");
+                playBtn.id = `song-btn-${song.id}`;
+                playBtn.type = "button";
+                playBtn.className = "btn-kid bg-emerald-500 hover:bg-emerald-600 text-white font-black px-6 py-3 rounded-2xl border-b-4 border-emerald-700 text-sm flex items-center justify-center gap-1.5 shadow cursor-pointer";
+                playBtn.innerHTML = `<span>▶️</span><span>Ойнату</span>`;
+                playBtn.onclick = () => toggleSong(idx);
+
+                right.appendChild(playBtn);
+
+                row.appendChild(left);
+                row.appendChild(right);
+                container.appendChild(row);
+            });
+
+            syncAudioUI();
+        }
+
+        async function toggleSong(idx) {
+            if (idx < 0 || idx >= SONGS.length) return;
+            const st = songState[idx];
+            const src = st.src;
+
+            if (activeSongIdx === idx && isActuallyPlaying()) {
+                audioPlayer.pause();
+                syncAudioUI();
+                return;
+            }
+
+            if (activeSongIdx === idx && audioPlayer.src.endsWith(encodeURIComponent(SONGS[idx].fileName)) && st.hasData && !st.hasError && audioPlayer.paused) {
+                try {
+                    await audioPlayer.play();
+                    syncAudioUI();
+                    return;
+                } catch (_) {}
+            }
+
+            activeSongIdx = idx;
+            st.hasError = false;
+            st.hasData = false;
+            audioPlayer.src = src;
+            audioPlayer.load();
+            syncAudioUI();
+
+            try {
+                await audioPlayer.play();
+                st.hasData = true;
+                st.hasError = false;
+            } catch (_) {
+                st.hasError = true;
+            }
+            syncAudioUI();
+        }
+
+        function stopAudio() {
+            audioPlayer.pause();
+            try {
+                audioPlayer.currentTime = 0;
+            } catch (_) {}
+            activeSongIdx = null;
+            syncAudioUI();
+        }
+
+        function seekTrack(percentVal) {
+            if (!Number.isFinite(audioPlayer.duration) || audioPlayer.duration <= 0) return;
+            const pct = Math.max(0, Math.min(100, Number(percentVal)));
+            audioPlayer.currentTime = (pct / 100) * audioPlayer.duration;
+            syncAudioUI();
+        }
+
+        function changeVolume(val) {
+            const v = Math.max(0, Math.min(1, Number(val)));
+            audioPlayer.volume = v;
+        }
+
+        audioPlayer.addEventListener("loadedmetadata", () => {
+            if (activeSongIdx !== null) {
+                songState[activeSongIdx].hasData = true;
+                songState[activeSongIdx].hasError = false;
+            }
+            syncAudioUI();
+        });
+
+        audioPlayer.addEventListener("canplay", () => {
+            if (activeSongIdx !== null) {
+                songState[activeSongIdx].hasData = true;
+                songState[activeSongIdx].hasError = false;
+            }
+            syncAudioUI();
+        });
+
+        audioPlayer.addEventListener("timeupdate", () => {
+            syncAudioUI();
+        });
+
+        audioPlayer.addEventListener("play", () => {
+            if (activeSongIdx !== null) {
+                songState[activeSongIdx].hasData = true;
+                songState[activeSongIdx].hasError = false;
+            }
+            syncAudioUI();
+        });
+
+        audioPlayer.addEventListener("pause", () => {
+            syncAudioUI();
+        });
+
+        audioPlayer.addEventListener("ended", () => {
+            activeSongIdx = null;
+            syncAudioUI();
+        });
+
+        audioPlayer.addEventListener("error", () => {
+            if (activeSongIdx !== null) {
+                songState[activeSongIdx].hasError = true;
+                songState[activeSongIdx].hasData = false;
+            }
+            syncAudioUI();
+        });
+
+        document.getElementById("player-progress").addEventListener("pointerdown", () => {
+            isDraggingProgress = true;
+        });
+        document.getElementById("player-progress").addEventListener("pointerup", () => {
+            isDraggingProgress = false;
+        });
+
+        // Бастапқы күйді шығару
+        renderMovements();
+        updateActiveMovementUI();
+        updateTimerUI();
+        renderSongs();
+    </script>
+</body>
+</html>

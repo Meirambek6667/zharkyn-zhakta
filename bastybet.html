@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zharkyn Zhakta</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #e0f2fe, #fce7f3, #fef9c3);
+      color: #0f172a;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #ffffffd9;
+      backdrop-filter: blur(8px);
+      border-bottom: 2px solid #e2e8f0;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      font-weight: 800;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .nav a {
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #0f172a;
+      transition: 0.15s;
+    }
+    .nav a:hover { background: #2563eb; color: #fff; }
+    .nav a.active { background: #2563eb; color: #fff; }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 16px;
+      flex: 1;
+    }
+    .hero {
+      background: #ffffffe6;
+      border: 3px solid #fff;
+      border-radius: 24px;
+      padding: 28px 18px;
+      text-align: center;
+      box-shadow: 0 8px 24px #00000014;
+      margin-bottom: 22px;
+    }
+    .hero h1 { margin: 6px 0; font-size: clamp(26px, 4vw, 36px); }
+    .hero p { margin: 0 auto; max-width: 640px; color: #475569; font-size: 16px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      text-decoration: none;
+      border: 3px solid #fff;
+      border-radius: 22px;
+      padding: 26px 16px;
+      text-align: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 19px;
+      box-shadow: 0 8px 18px #00000018;
+      transition: transform 0.15s;
+      display: block;
+    }
+    .card:hover { transform: translateY(-4px); }
+    .card span { display: block; font-size: 44px; margin-bottom: 10px; }
+    .card small { display: block; font-size: 12px; font-weight: 500; margin-top: 6px; opacity: 0.9; }
+
+    .pink { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+    .green { background: linear-gradient(135deg, #10b981, #059669); }
+    .blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+    .purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+    .note {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">🎈 Zharkyn Zhakta</div>
+    <nav class="nav">
+      <a href="bastybet.html" class="active">Басты бет</a>
+      <a href="suret.html">🎨 Сурет салу</a>
+      <a href="futbolshylar.html">⚽ Футболшылар</a>
+      <a href="1_20.html">🔢 Математика (1–20)</a>
+      <a href="sergytu.html">🎵 Сергіту сәті</a>
+      <a href="code_artifact.html">🧩 Қосымша</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <div style="font-size:42px;">🎈🎨⚽🔢🎵</div>
+      <h1>Қош келдің, балақай!</h1>
+      <p>«Zharkyn Zhakta» бөлімдерінің бірін таңдап ойнаңыз.</p>
+    </div>
+
+    <div class="grid">
+      <a class="card pink" href="suret.html">
+        <span>🎨</span>Сурет салу
+        <small>suret.html</small>
+      </a>
+      <a class="card green" href="futbolshylar.html">
+        <span>⚽</span>Футболшылар
+        <small>futbolshylar.html</small>
+      </a>
+      <a class="card blue" href="1_20.html">
+        <span>🔢</span>Математика (1–20)
+        <small>1_20.html</small>
+      </a>
+      <a class="card orange" href="sergytu.html">
+        <span>🎵</span>Сергіту сәті
+        <small>sergytu.html + audio</small>
+      </a>
+      <a class="card purple" href="code_artifact.html">
+        <span>🧩</span>Қосымша бөлім
+        <small>code_artifact.html</small>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
